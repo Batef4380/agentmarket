@@ -4,166 +4,139 @@ import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import BinaryTicker from "./BinaryTicker";
 
-const COLS = 14;
-const ROWS = 6;
-const TOTAL = COLS * ROWS;
-const RADIUS = 220; // px — reveal circle
-
-const WORDS = [
-  "REPUTATION", "ON-CHAIN", "TRUST", "AGENTS", "EARN", "WORTH",
-  "VERIFY", "DEPLOY", "STAKE", "SCORE", "PROOF", "PROTOCOL",
-  "MARKET", "STOVERA", "BOUNTY", "REVIEW", "SIGNAL", "BADGE",
-  "IDENTITY", "NETWORK", "TASK", "REWARD", "AGENT", "HIRE",
-  "BUILD", "AUDIT", "RANK", "CHAIN", "REGISTRY", "MERIT",
-  "TRACK", "ETH", "0x", "✦", "→", "ESCROW",
-];
-
-const CELL_WORDS = Array.from({ length: TOTAL }, (_, i) => {
-  const row = Math.floor(i / COLS);
-  const col = i % COLS;
-  const hash = ((row * 7 + 1) * (col * 13 + 1) * 37) % 100;
-  if (hash < 45) return WORDS[(row * 5 + col * 7) % WORDS.length];
-  return "";
-});
-
 export default function Hero() {
-  const gridRef      = useRef<HTMLDivElement>(null);
-  const spotRef      = useRef<HTMLDivElement>(null);
-  const cellRefs     = useRef<(HTMLDivElement | null)[]>([]);
-  const rafRef       = useRef<number>();
-  const mouseRef     = useRef({ x: -9999, y: -9999 });
-  const activeRef    = useRef(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouseRef  = useRef({ x: -2000, y: 0 });
 
   useEffect(() => {
-    const grid = gridRef.current;
-    const spot = spotRef.current;
-    if (!grid || !spot) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    const update = () => {
-      const { x, y } = mouseRef.current;
-      const W = grid.offsetWidth  / COLS;
-      const H = grid.offsetHeight / ROWS;
+    const COL_STEP  = 8;    // px between column centers
+    const SEG_H     = 3;    // segment rect height
+    const SEG_GAP   = 2;    // gap between segments
+    const SEG_STEP  = SEG_H + SEG_GAP;
+    const BAR_W     = 2.5;
+    const MOUSE_R   = 280;  // influence radius (px)
 
-      // Move spotlight
-      if (activeRef.current) {
-        spot.style.opacity  = "1";
-        spot.style.backgroundImage =
-          `radial-gradient(circle ${RADIUS}px at ${x}px ${y}px, rgba(200,168,75,0.13) 0%, rgba(200,168,75,0.04) 50%, transparent 100%)`;
-      } else {
-        spot.style.opacity = "0";
+    interface Col {
+      x:     number;
+      phase: number;
+      freq:  number;
+      amp:   number;
+    }
+
+    let cols: Col[] = [];
+    let W = 0, H = 0;
+    let raf = 0;
+    let t   = 0;
+    let started = false;
+
+    const buildCols = () => {
+      cols = [];
+      const n = Math.ceil(W / COL_STEP) + 2;
+      for (let i = 0; i < n; i++) {
+        cols.push({
+          x:     i * COL_STEP,
+          phase: Math.random() * Math.PI * 2,
+          freq:  0.22 + Math.random() * 0.45,
+          amp:   0.12 + Math.random() * 0.38,
+        });
       }
+    };
 
-      cellRefs.current.forEach((cell, i) => {
-        if (!cell) return;
-        const row = Math.floor(i / COLS);
-        const col = i % COLS;
-        const cx  = (col + 0.5) * W;
-        const cy  = (row + 0.5) * H;
-        const dist = Math.hypot(cx - x, cy - y);
-        const t   = Math.max(0, 1 - dist / RADIUS);
-        const t3  = t * t * t;
+    const resize = () => {
+      W = canvas.offsetWidth;
+      H = canvas.offsetHeight;
+      if (W === 0 || H === 0) return;
+      canvas.width  = W;
+      canvas.height = H;
+      buildCols();
+      if (!started) { started = true; draw(); }
+    };
 
-        cell.style.borderColor     = `rgba(200,168,75,${0.08 + t * 0.75})`;
-        cell.style.backgroundColor = `rgba(200,168,75,${t3 * 0.18})`;
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
 
-        const txt = cell.firstElementChild as HTMLElement | null;
-        if (txt) {
-          txt.style.opacity   = String(0.07 + t * 0.93);
-          txt.style.transform = `scale(${1 + t * 0.12})`;
-          if (t > 0.5) {
-            txt.style.color = "#C8A84B";
-            txt.style.textShadow = `0 0 ${Math.round(t * 12)}px rgba(200,168,75,0.6)`;
+      const mx = mouseRef.current.x;
+
+      cols.forEach(col => {
+        const dx        = col.x - mx;
+        const mRaw      = Math.max(0, 1 - Math.abs(dx) / MOUSE_R);
+        const mStrength = mRaw * mRaw * mRaw;  // cubic falloff — sharp peak
+
+        // Animated height
+        const wave  = (Math.sin(t * col.freq + col.phase) + 1) / 2;
+        const baseH = col.amp * wave * H * 0.42;
+        const boost = mStrength * H * 0.78;
+        const totalH = Math.max(4, baseH + boost);
+        const numSegs = Math.floor(totalH / SEG_STEP);
+
+        for (let s = 0; s < numSegs; s++) {
+          const y        = H - s * SEG_STEP - SEG_H;
+          const progress = s / numSegs;              // 0 = bottom, 1 = top
+
+          let r: number, g: number, b: number, a: number;
+
+          if (mStrength > 0.02) {
+            // Gold — brighter center, fades to top & sides
+            r = 200; g = 168; b = 75;
+            a = (0.2 + mStrength * 0.8) * (1 - progress * 0.55);
           } else {
-            txt.style.color = `rgba(26,46,26,${0.25 + t * 0.5})`;
-            txt.style.textShadow = "none";
+            // Forest green ghost
+            r = 26; g = 46; b = 26;
+            a = (0.05 + col.amp * 0.07) * (1 - progress * 0.5);
           }
+
+          ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+          ctx.fillRect(col.x - BAR_W / 2, y, BAR_W, SEG_H);
         }
       });
+
+      t   += 0.015;
+      raf  = requestAnimationFrame(draw);
     };
 
     const onMove = (e: MouseEvent) => {
-      const rect = grid.getBoundingClientRect();
-      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      activeRef.current = true;
-      cancelAnimationFrame(rafRef.current!);
-      rafRef.current = requestAnimationFrame(update);
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
     };
+    const onLeave = () => { mouseRef.current = { x: -2000, y: 0 }; };
 
-    const onLeave = () => {
-      activeRef.current = false;
-      mouseRef.current  = { x: -9999, y: -9999 };
-      cancelAnimationFrame(rafRef.current!);
-      rafRef.current = requestAnimationFrame(update);
-    };
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+    resize();
 
-    grid.addEventListener("mousemove", onMove);
-    grid.addEventListener("mouseleave", onLeave);
+    canvas.addEventListener("mousemove", onMove);
+    canvas.addEventListener("mouseleave", onLeave);
+
     return () => {
-      grid.removeEventListener("mousemove", onMove);
-      grid.removeEventListener("mouseleave", onLeave);
-      cancelAnimationFrame(rafRef.current!);
+      cancelAnimationFrame(raf);
+      canvas.removeEventListener("mousemove", onMove);
+      canvas.removeEventListener("mouseleave", onLeave);
+      ro.disconnect();
     };
   }, []);
 
   return (
     <section className="relative bg-cream pt-16">
 
-      {/* ── INTERACTIVE GRID ─────────────────────────── */}
-      <div
-        ref={gridRef}
-        className="relative overflow-hidden cursor-crosshair"
-        style={{ height: "55vh", background: "#F5F0E8" }}
-      >
-        {/* Cell grid */}
-        <div
-          className="absolute inset-0 grid"
-          style={{
-            gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-            gridTemplateRows:    `repeat(${ROWS}, 1fr)`,
-          }}
-        >
-          {CELL_WORDS.map((word, i) => (
-            <div
-              key={i}
-              ref={el => { cellRefs.current[i] = el; }}
-              className="flex items-center justify-center border"
-              style={{
-                borderColor:     "rgba(26,46,26,0.08)",
-                backgroundColor: "transparent",
-                transition:      "border-color 60ms, background-color 60ms",
-              }}
-            >
-              {word && (
-                <span
-                  className="font-mono uppercase select-none pointer-events-none"
-                  style={{
-                    fontSize:       "clamp(8px, 0.72vw, 11px)",
-                    letterSpacing:  "0.12em",
-                    fontWeight:     600,
-                    opacity:        0.07,
-                    color:          "rgba(26,46,26,0.35)",
-                    transition:     "opacity 60ms, color 60ms, transform 60ms, text-shadow 60ms",
-                    transformOrigin:"center",
-                    whiteSpace:     "nowrap",
-                  }}
-                >
-                  {word}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Cursor spotlight layer */}
-        <div
-          ref={spotRef}
-          className="absolute inset-0 pointer-events-none"
-          style={{ opacity: 0, transition: "opacity 200ms" }}
+      {/* ── CANVAS WAVE ──────────────────────────────── */}
+      <div className="relative overflow-hidden" style={{ height: "55vh", background: "#F5F0E8" }}>
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full"
+          style={{ cursor: "crosshair" }}
         />
 
         {/* Bottom fade */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none"
+          className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
           style={{ background: "linear-gradient(to bottom, transparent, #F5F0E8)" }}
         />
 
