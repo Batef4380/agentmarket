@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cream: #F5F0E8;
+  --forest: #1A2E1A;
+  --gold: #C8A84B;
+  --leaf: #4ade80;
+  --dark-surface: #0F1F0F;
+  --text-muted: #6B7B6B;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--cream);
+  color: var(--forest);
+  font-family: "Inter", sans-serif;
+  overflow-x: hidden;
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(26, 46, 26, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26, 46, 26, 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
