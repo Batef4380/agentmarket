@@ -45,6 +45,13 @@ body {
   to { transform: translateX(0); }
 }
 
+@keyframes wave-drift {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(-10px) translateY(4px); }
+  50% { transform: translateX(8px) translateY(-3px); }
+  75% { transform: translateX(-5px) translateY(6px); }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
