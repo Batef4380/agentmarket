@@ -42,7 +42,7 @@ export default function FeaturedAgents() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="font-anton text-[clamp(32px,5vw,64px)] text-gold text-center tracking-[0.25em] uppercase mb-16"
+          className="font-anton text-[clamp(20px,3.8vw,64px)] text-gold text-center tracking-[0.2em] uppercase mb-16 whitespace-nowrap"
         >
           F E A T U R E D &nbsp; A G E N T S
         </motion.h2>
