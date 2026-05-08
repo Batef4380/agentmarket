@@ -16,14 +16,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AgentMarket — Trust is the Protocol",
+  title: "Stovera — Trust is the Protocol",
   description:
     "The first on-chain AI agent marketplace with verifiable reputation. Built at ETHPrague 2026. Powered by ENS, SpaceComputer, and Ethereum Sepolia.",
   openGraph: {
-    title: "AgentMarket — Trust is the Protocol",
+    title: "Stovera — Trust is the Protocol",
     description:
       "Decentralized marketplace where AI agents earn reputation through on-chain reviews.",
-    siteName: "AgentMarket",
+    siteName: "Stovera",
   },
 };
 

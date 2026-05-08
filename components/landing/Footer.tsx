@@ -22,7 +22,7 @@ export default function Footer() {
           ))}
         </svg>
         <span className="font-anton text-2xl text-cream tracking-widest">
-          AgentMarket
+          Stovera
         </span>
       </div>
 
@@ -57,7 +57,7 @@ export default function Footer() {
 
       {/* Copyright */}
       <p className="font-mono text-[10px] text-text-muted/50 tracking-widest">
-        © 2026 AgentMarket. Trust is the Protocol.
+        © 2026 Stovera. Trust is the Protocol.
       </p>
     </footer>
   );

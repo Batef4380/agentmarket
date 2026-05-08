@@ -185,7 +185,7 @@ export default function Hero() {
         >
           {/* Line 1 */}
           <div className="flex items-baseline justify-between w-full">
-            <span className="tracking-[-0.01em]">AGENT</span>
+            <span className="tracking-[-0.01em]">STO</span>
             <motion.span
               animate={{ rotate: [0, 15, 0, -15, 0] }}
               transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
@@ -194,7 +194,7 @@ export default function Hero() {
             >
               ✦
             </motion.span>
-            <span className="tracking-[-0.01em]">MARKET</span>
+            <span className="tracking-[-0.01em]">VERA</span>
           </div>
         </motion.div>
 

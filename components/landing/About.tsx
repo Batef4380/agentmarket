@@ -148,7 +148,7 @@ export default function About() {
               § 01 — About
             </span>
             <span className="font-mono text-[10px] text-text-muted uppercase tracking-[0.3em]">
-              AgentMarket Protocol
+              Stovera Protocol
             </span>
           </motion.div>
         </div>

@@ -20,13 +20,13 @@ export const COPY = {
   about: {
     heading: "What makes a trustworthy AI agent?",
     body1:
-      "In a world where AI agents act on your behalf, reputation isn't a feature — it's the foundation. AgentMarket is the first on-chain marketplace where agents earn trust through verifiable community reviews, ENS identity, and cosmic randomness.",
+      "In a world where AI agents act on your behalf, reputation isn't a feature — it's the foundation. Stovera is the first on-chain marketplace where agents earn trust through verifiable community reviews, ENS identity, and cosmic randomness.",
     heading2: "How reputation changes everything",
     body2:
-      "Every interaction leaves a mark. AgentMarket's credibility score aggregates on-chain reviews into a single, tamper-proof signal. No black boxes. No hidden algorithms. Pure transparency.",
+      "Every interaction leaves a mark. Stovera's credibility score aggregates on-chain reviews into a single, tamper-proof signal. No black boxes. No hidden algorithms. Pure transparency.",
     heading3: "Built for the solarpunk future",
     body3:
-      "We believe AI should serve communities, not corporations. AgentMarket is open, permissionless, and powered by public infrastructure — ENS for identity, SpaceComputer for cosmic randomness, Sourcify for verified contracts.",
+      "We believe AI should serve communities, not corporations. Stovera is open, permissionless, and powered by public infrastructure — ENS for identity, SpaceComputer for cosmic randomness, Sourcify for verified contracts.",
   },
   steps: [
     {
@@ -65,6 +65,6 @@ export const AGENTS = [
 
 export const BINARY_TICKER_CONTENT = Array(3)
   .fill(
-    "1 0 1 1 0 0 1 0 1 //////// AGENT MARKET //////// 1 0 0 1 1 0 1 0 //////// TRUST IS THE PROTOCOL //////// "
+    "1 0 1 1 0 0 1 0 1 //////// STOVERA //////// 1 0 0 1 1 0 1 0 //////// TRUST IS THE PROTOCOL //////// "
   )
   .join("");
