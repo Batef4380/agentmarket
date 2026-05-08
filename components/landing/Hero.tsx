@@ -184,7 +184,7 @@ export default function Hero() {
           }}
         >
           {/* Title */}
-          <div className="flex items-center gap-4 md:gap-6 w-full">
+          <div className="flex items-center justify-center gap-4 md:gap-6 w-full">
             <motion.span
               animate={{ rotate: [0, 15, 0, -15, 0] }}
               transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
