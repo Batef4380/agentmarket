@@ -183,18 +183,23 @@ export default function Hero() {
             color: "#1A2E1A",
           }}
         >
-          {/* Line 1 */}
-          <div className="flex items-baseline justify-between w-full">
-            <span className="tracking-[-0.01em]">STO</span>
+          {/* Title */}
+          <div className="flex items-center gap-4 md:gap-6 w-full">
             <motion.span
               animate={{ rotate: [0, 15, 0, -15, 0] }}
               transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-              style={{ color: "#C8A84B", display: "inline-block" }}
-              className="mx-2 md:mx-4"
+              style={{ color: "#C8A84B", display: "inline-block", fontSize: "0.45em" }}
             >
               ✦
             </motion.span>
-            <span className="tracking-[-0.01em]">VERA</span>
+            <span className="tracking-[-0.02em] whitespace-nowrap">STOVERA</span>
+            <motion.span
+              animate={{ rotate: [0, -15, 0, 15, 0] }}
+              transition={{ repeat: Infinity, duration: 6, ease: "easeInOut", delay: 3 }}
+              style={{ color: "#C8A84B", display: "inline-block", fontSize: "0.45em" }}
+            >
+              ✦
+            </motion.span>
           </div>
         </motion.div>
 

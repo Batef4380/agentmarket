@@ -6,20 +6,12 @@ export default function Footer() {
     >
       {/* Logo + name */}
       <div className="flex items-center justify-center gap-3 mb-4">
-        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-          <circle cx="16" cy="16" r="7" fill="#C8A84B" />
-          {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
-            <line
-              key={i}
-              x1="16"
-              y1="16"
-              x2={16 + 14 * Math.cos((deg * Math.PI) / 180)}
-              y2={16 + 14 * Math.sin((deg * Math.PI) / 180)}
-              stroke="#4ade80"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          ))}
+        <svg width="36" height="36" viewBox="0 0 100 100" fill="none">
+          <line x1="50" y1="4"  x2="50" y2="96" stroke="#C8A84B" strokeWidth="8" strokeLinecap="round"/>
+          <line x1="4"  y1="50" x2="96" y2="50" stroke="#C8A84B" strokeWidth="8" strokeLinecap="round"/>
+          <line x1="15" y1="15" x2="85" y2="85" stroke="#C8A84B" strokeWidth="8" strokeLinecap="round"/>
+          <line x1="85" y1="15" x2="15" y2="85" stroke="#C8A84B" strokeWidth="8" strokeLinecap="round"/>
+          <circle cx="50" cy="50" r="22" fill="#1A2E1A"/>
         </svg>
         <span className="font-anton text-2xl text-cream tracking-widest">
           Stovera
