@@ -15,7 +15,7 @@ export default function HowItWorks() {
 
         <div className="divide-y divide-forest/15">
           {COPY.steps.map((step) => (
-            <div key={step.number} className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 py-10 md:py-14">
+            <div key={step.number} className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 py-6 md:py-8">
               <div className="flex items-start gap-6">
                 <span
                   className="font-anton leading-none select-none"

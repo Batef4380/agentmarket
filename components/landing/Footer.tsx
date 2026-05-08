@@ -24,7 +24,7 @@ export default function Footer() {
 
       {/* Tech stack line */}
       <p className="font-mono text-xs text-text-muted mb-8">
-        Built with ✦ on Ethereum Sepolia &nbsp;|&nbsp; ENS &nbsp;|&nbsp;
+        Built with ✦ on Base &nbsp;|&nbsp; ENS &nbsp;|&nbsp;
         SpaceComputer &nbsp;|&nbsp; Sourcify
       </p>
 

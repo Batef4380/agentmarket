@@ -32,7 +32,7 @@ export default function FeaturedAgents() {
               key={agent.id}
               whileHover={{ y: -8 }}
               className="group relative border border-transparent hover:border-gold/50 transition-all duration-300 cursor-pointer"
-              style={{ background: "#1A2E1A" }}
+              style={{ background: "#1A2E1A", border: "2px solid #C8A84B", boxShadow: "0 0 30px rgba(200, 168, 75, 0.2)" }}
             >
               <div className="w-full h-24" style={{ background: CARD_GRADIENTS[i] }} />
               <div className="p-5">

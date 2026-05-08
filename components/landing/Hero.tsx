@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import BinaryTicker from "./BinaryTicker";
 
 const NUM_LINES = 22;
@@ -9,6 +10,7 @@ const MOUSE_RADIUS = 120;
 const DISTORT_AMP  = 35;
 
 export default function Hero() {
+  const router = useRouter();
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const mousePosRef = useRef({ x: -9999, y: -9999 });
   const influenceRef = useRef(0); // current smoothed influence scalar
@@ -71,9 +73,9 @@ export default function Hero() {
 
       lines.forEach((ln) => {
         ctx.beginPath();
-        ctx.lineWidth   = ln.thick ? 1.6 : 0.8;
+        ctx.lineWidth   = ln.thick ? 2 : 1;
         ctx.strokeStyle = "#1A2E1A";
-        ctx.globalAlpha = ln.thick ? 0.22 : 0.12;
+        ctx.globalAlpha = ln.thick ? 0.55 : 0.35;
 
         for (let px = 0; px <= W; px += 2) {
           const wave =
@@ -137,7 +139,7 @@ export default function Hero() {
     <section className="relative bg-cream pt-16">
 
       {/* ── TOPOGRAPHIC CANVAS ───────────────────────── */}
-      <div className="relative w-full" style={{ height: "55vh", minHeight: 320, background: "#F5F0E8" }}>
+      <div className="relative w-full" style={{ height: "30vh", minHeight: 160, background: "#F5F0E8" }}>
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full"
@@ -156,7 +158,7 @@ export default function Hero() {
         {/* Floating badges */}
         <div className="absolute top-6 left-6 md:left-10 z-10 pointer-events-none">
           <span className="font-mono text-[10px] text-text-muted uppercase tracking-[0.2em] border border-forest/15 px-3 py-1.5 bg-cream/80 backdrop-blur-sm">
-            ✦ Sepolia Testnet
+            ✦ Base Mainnet
           </span>
         </div>
         <div className="absolute top-6 right-6 md:right-10 z-10 pointer-events-none">
@@ -170,12 +172,12 @@ export default function Hero() {
       <BinaryTicker direction="left" speed={22} />
 
       {/* ── GIANT TITLE ─────────────────────────────── */}
-      <div className="relative py-2">
+      <div className="relative py-2 pb-6">
         <div
           className="flex items-center justify-center gap-4 md:gap-6 w-full px-3 md:px-6 select-none"
           style={{
             fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize:   "clamp(72px, 14.5vw, 215px)",
+            fontSize:   "clamp(56px, 11vw, 160px)",
             lineHeight: 0.88,
             color:      "#1A2E1A",
           }}
@@ -198,9 +200,12 @@ export default function Hero() {
         </div>
 
         <div className="flex items-center justify-between px-4 md:px-7 pt-4 pb-2">
-          <p className="font-mono text-[11px] md:text-xs text-text-muted uppercase tracking-[0.25em]">
-            Reputation is Everything
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="font-mono text-[11px] md:text-xs text-text-muted uppercase tracking-[0.25em]">
+              Reputation is Everything
+            </p>
+            <div className="w-16 h-px bg-forest/20" />
+          </div>
           <div className="hidden md:flex items-center gap-2">
             <div className="w-16 h-px bg-forest/20" />
             <p className="font-mono text-[11px] text-text-muted uppercase tracking-[0.25em]">
@@ -210,28 +215,71 @@ export default function Hero() {
         </div>
       </div>
 
+      {/* ── ENTER THE MARKET CTA ─────────────────────── */}
+      <div className="flex justify-center py-4 px-4">
+        <button
+          onClick={() => router.push("/home")}
+          style={{
+            fontFamily: "var(--font-anton), Anton, sans-serif",
+            fontSize: 24,
+            letterSpacing: "0.05em",
+            color: "#F5F0E8",
+            background: "#1A2E1A",
+            border: "none",
+            padding: "14px 40px",
+            cursor: "pointer",
+            transition: "background 0.2s, color 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#C8A84B";
+            e.currentTarget.style.color = "#0F1F0F";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#1A2E1A";
+            e.currentTarget.style.color = "#F5F0E8";
+          }}
+        >
+          ENTER THE MARKET →
+        </button>
+      </div>
+
       {/* ── TICKER 2 ────────────────────────────────── */}
       <BinaryTicker direction="right" speed={18} />
 
-      {/* ── BOTTOM META ROW ─────────────────────────── */}
-      <div className="flex justify-between items-center px-6 md:px-10 py-5 border-t border-forest/10">
-        <span className="font-mono text-[10px] text-text-muted uppercase tracking-widest">
-          ENS · SpaceComputer · Sourcify
-        </span>
-        <a
-          href="#about"
-          className="font-mono text-[10px] text-text-muted uppercase tracking-widest hover:text-forest transition-colors flex items-center gap-2"
+      {/* ── SCROLL TO EXPLORE ────────────────────────── */}
+      <a href="#about" style={{ textDecoration: "none", display: "flex", justifyContent: "center", padding: "24px 0" }}>
+        <motion.div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 6,
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1, duration: 0.5 }}
         >
-          Scroll to explore
-          <motion.span
-            animate={{ y: [0, 4, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-            className="inline-block"
-          >
-            ↓
-          </motion.span>
-        </a>
-      </div>
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              style={{
+                width: 18,
+                height: 18,
+                borderRight: "2px solid #C8A84B",
+                borderBottom: "2px solid #C8A84B",
+                transform: "rotate(45deg)",
+              }}
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{
+                repeat: Infinity,
+                duration: 1.2,
+                delay: i * 0.2,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+        </motion.div>
+      </a>
     </section>
   );
 }

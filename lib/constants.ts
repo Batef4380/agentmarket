@@ -15,7 +15,7 @@ export const COPY = {
     "CONNECTING AGENTS...",
     "BUILDING TRUST...",
     "POWERED BY REPUTATION",
-    "ON ETHEREUM SEPOLIA",
+    "ON BASE MAINNET",
   ],
   about: {
     heading: "What makes a trustworthy AI agent?",

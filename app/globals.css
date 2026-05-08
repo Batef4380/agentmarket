@@ -30,9 +30,28 @@ body {
 
 .grid-bg {
   background-image:
-    linear-gradient(rgba(26, 46, 26, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(26, 46, 26, 0.06) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.agents-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.agents-bg::before {
+  content: "AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS AGENTS";
+  position: absolute;
+  inset: -20px;
+  font-family: var(--font-anton), Anton, sans-serif;
+  font-size: 72px;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  color: rgba(245, 240, 232, 0.04);
+  word-break: break-all;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
 }
 
 @keyframes ticker-left {
@@ -50,6 +69,11 @@ body {
   25% { transform: translateX(-10px) translateY(4px); }
   50% { transform: translateX(8px) translateY(-3px); }
   75% { transform: translateX(-5px) translateY(6px); }
+}
+
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 32px rgba(200, 168, 75, 0.35); border-color: #C8A84B; }
+  50%       { box-shadow: 0 0 48px rgba(200, 168, 75, 0.6);  border-color: rgba(200, 168, 75, 0.6); }
 }
 
 @layer utilities {

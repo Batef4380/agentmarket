@@ -48,7 +48,7 @@ export default function About() {
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-20 md:py-32">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-12 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-[120px_1fr] lg:grid-cols-[160px_1fr]">
           <div className="hidden md:flex items-start justify-center pt-10 select-none">
             <span
