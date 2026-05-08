@@ -4,43 +4,54 @@ import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import BinaryTicker from "./BinaryTicker";
 
-const COLS = 18;
-const ROWS = 7;
+const COLS = 14;
+const ROWS = 6;
 const TOTAL = COLS * ROWS;
-const RADIUS = 160; // px — reveal circle radius
+const RADIUS = 220; // px — reveal circle
 
 const WORDS = [
   "REPUTATION", "ON-CHAIN", "TRUST", "AGENTS", "EARN", "WORTH",
   "VERIFY", "DEPLOY", "STAKE", "SCORE", "PROOF", "PROTOCOL",
   "MARKET", "STOVERA", "BOUNTY", "REVIEW", "SIGNAL", "BADGE",
   "IDENTITY", "NETWORK", "TASK", "REWARD", "AGENT", "HIRE",
-  "BUILD", "AUDIT", "RANK", "CHAIN", "REGISTRY", "ESCROW",
-  "MERIT", "TRACK", "ETH", "0x", "✦", "→",
+  "BUILD", "AUDIT", "RANK", "CHAIN", "REGISTRY", "MERIT",
+  "TRACK", "ETH", "0x", "✦", "→", "ESCROW",
 ];
 
-// Deterministic cell content — ~40 % of cells get a word
 const CELL_WORDS = Array.from({ length: TOTAL }, (_, i) => {
   const row = Math.floor(i / COLS);
   const col = i % COLS;
   const hash = ((row * 7 + 1) * (col * 13 + 1) * 37) % 100;
-  if (hash < 40) return WORDS[(row * 5 + col * 7) % WORDS.length];
+  if (hash < 45) return WORDS[(row * 5 + col * 7) % WORDS.length];
   return "";
 });
 
 export default function Hero() {
-  const gridRef   = useRef<HTMLDivElement>(null);
-  const cellRefs  = useRef<(HTMLDivElement | null)[]>([]);
-  const rafRef    = useRef<number>();
-  const mouseRef  = useRef({ x: -9999, y: -9999 });
+  const gridRef      = useRef<HTMLDivElement>(null);
+  const spotRef      = useRef<HTMLDivElement>(null);
+  const cellRefs     = useRef<(HTMLDivElement | null)[]>([]);
+  const rafRef       = useRef<number>();
+  const mouseRef     = useRef({ x: -9999, y: -9999 });
+  const activeRef    = useRef(false);
 
   useEffect(() => {
     const grid = gridRef.current;
-    if (!grid) return;
+    const spot = spotRef.current;
+    if (!grid || !spot) return;
 
     const update = () => {
       const { x, y } = mouseRef.current;
       const W = grid.offsetWidth  / COLS;
       const H = grid.offsetHeight / ROWS;
+
+      // Move spotlight
+      if (activeRef.current) {
+        spot.style.opacity  = "1";
+        spot.style.backgroundImage =
+          `radial-gradient(circle ${RADIUS}px at ${x}px ${y}px, rgba(200,168,75,0.13) 0%, rgba(200,168,75,0.04) 50%, transparent 100%)`;
+      } else {
+        spot.style.opacity = "0";
+      }
 
       cellRefs.current.forEach((cell, i) => {
         if (!cell) return;
@@ -49,19 +60,23 @@ export default function Hero() {
         const cx  = (col + 0.5) * W;
         const cy  = (row + 0.5) * H;
         const dist = Math.hypot(cx - x, cy - y);
-        const t   = Math.max(0, 1 - dist / RADIUS); // 0–1
-        const t2  = t * t;                           // ease-in curve
+        const t   = Math.max(0, 1 - dist / RADIUS);
+        const t3  = t * t * t;
 
-        cell.style.borderColor      = `rgba(200,168,75,${0.06 + t2 * 0.7})`;
-        cell.style.backgroundColor  = `rgba(200,168,75,${t2 * 0.1})`;
+        cell.style.borderColor     = `rgba(200,168,75,${0.08 + t * 0.75})`;
+        cell.style.backgroundColor = `rgba(200,168,75,${t3 * 0.18})`;
 
         const txt = cell.firstElementChild as HTMLElement | null;
         if (txt) {
-          txt.style.opacity = String(0.05 + t * 0.95);
-          txt.style.color   = t > 0.35
-            ? `rgba(200,168,75,1)`
-            : `rgba(26,46,26,${0.2 + t * 0.6})`;
-          txt.style.transform = `scale(${1 + t * 0.08})`;
+          txt.style.opacity   = String(0.07 + t * 0.93);
+          txt.style.transform = `scale(${1 + t * 0.12})`;
+          if (t > 0.5) {
+            txt.style.color = "#C8A84B";
+            txt.style.textShadow = `0 0 ${Math.round(t * 12)}px rgba(200,168,75,0.6)`;
+          } else {
+            txt.style.color = `rgba(26,46,26,${0.25 + t * 0.5})`;
+            txt.style.textShadow = "none";
+          }
         }
       });
     };
@@ -69,12 +84,14 @@ export default function Hero() {
     const onMove = (e: MouseEvent) => {
       const rect = grid.getBoundingClientRect();
       mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      activeRef.current = true;
       cancelAnimationFrame(rafRef.current!);
       rafRef.current = requestAnimationFrame(update);
     };
 
     const onLeave = () => {
-      mouseRef.current = { x: -9999, y: -9999 };
+      activeRef.current = false;
+      mouseRef.current  = { x: -9999, y: -9999 };
       cancelAnimationFrame(rafRef.current!);
       rafRef.current = requestAnimationFrame(update);
     };
@@ -94,7 +111,7 @@ export default function Hero() {
       {/* ── INTERACTIVE GRID ─────────────────────────── */}
       <div
         ref={gridRef}
-        className="relative overflow-hidden"
+        className="relative overflow-hidden cursor-crosshair"
         style={{ height: "55vh", background: "#F5F0E8" }}
       >
         {/* Cell grid */}
@@ -111,21 +128,23 @@ export default function Hero() {
               ref={el => { cellRefs.current[i] = el; }}
               className="flex items-center justify-center border"
               style={{
-                borderColor: "rgba(26,46,26,0.06)",
+                borderColor:     "rgba(26,46,26,0.08)",
                 backgroundColor: "transparent",
-                transition: "border-color 80ms, background-color 80ms",
+                transition:      "border-color 60ms, background-color 60ms",
               }}
             >
               {word && (
                 <span
                   className="font-mono uppercase select-none pointer-events-none"
                   style={{
-                    fontSize: "clamp(6px, 0.6vw, 9px)",
-                    letterSpacing: "0.15em",
-                    opacity: 0.05,
-                    color: "rgba(26,46,26,0.3)",
-                    transition: "opacity 80ms, color 80ms, transform 80ms",
-                    transformOrigin: "center",
+                    fontSize:       "clamp(8px, 0.72vw, 11px)",
+                    letterSpacing:  "0.12em",
+                    fontWeight:     600,
+                    opacity:        0.07,
+                    color:          "rgba(26,46,26,0.35)",
+                    transition:     "opacity 60ms, color 60ms, transform 60ms, text-shadow 60ms",
+                    transformOrigin:"center",
+                    whiteSpace:     "nowrap",
                   }}
                 >
                   {word}
@@ -135,16 +154,14 @@ export default function Hero() {
           ))}
         </div>
 
-        {/* Radial vignette so edges fade softly */}
+        {/* Cursor spotlight layer */}
         <div
+          ref={spotRef}
           className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, rgba(245,240,232,0.7) 100%)",
-          }}
+          style={{ opacity: 0, transition: "opacity 200ms" }}
         />
 
-        {/* Bottom fade into body */}
+        {/* Bottom fade */}
         <div
           className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none"
           style={{ background: "linear-gradient(to bottom, transparent, #F5F0E8)" }}
@@ -172,9 +189,9 @@ export default function Hero() {
           className="flex items-center justify-center gap-4 md:gap-6 w-full px-3 md:px-6 select-none"
           style={{
             fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: "clamp(72px, 14.5vw, 215px)",
+            fontSize:   "clamp(72px, 14.5vw, 215px)",
             lineHeight: 0.88,
-            color: "#1A2E1A",
+            color:      "#1A2E1A",
           }}
         >
           <motion.span
