@@ -52,7 +52,8 @@ function StatCard({
     <motion.div
       ref={ref}
       initial={{ opacity: 0, y: 20 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.05 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
       className={`relative p-6 md:p-8 flex flex-col justify-between min-h-[120px] border-forest/20
         ${index < STATS.length - 1 ? "border-r" : ""}
@@ -98,7 +99,8 @@ function ContentBlock({
     <motion.div
       ref={ref}
       initial={{ opacity: 0, x: 30 }}
-      animate={inView ? { opacity: 1, x: 0 } : {}}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, amount: 0.05 }}
       transition={{ duration: 0.65, delay, ease: [0.16, 1, 0.3, 1] }}
       className="grid grid-cols-[32px_1fr] gap-5 items-start py-8 border-b border-forest/10 last:border-b-0"
     >
@@ -137,11 +139,7 @@ export default function About() {
       {/* ── Editorial header bar ──────────────────── */}
       <div className="border-b border-forest/10">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-          <motion.div
-            ref={titleRef}
-            initial={{ opacity: 0, y: -20 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7 }}
+          <div
             className="flex items-center justify-between py-5"
           >
             <span className="font-mono text-[10px] text-text-muted uppercase tracking-[0.3em]">
@@ -150,7 +148,7 @@ export default function About() {
             <span className="font-mono text-[10px] text-text-muted uppercase tracking-[0.3em]">
               Stovera Protocol
             </span>
-          </motion.div>
+          </div>
         </div>
       </div>
 
@@ -175,7 +173,7 @@ export default function About() {
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.05 }}
               transition={{ duration: 0.8 }}
               className="font-anton text-forest leading-[1.1] mb-12 md:mb-16"
               style={{ fontSize: "clamp(28px, 3.5vw, 48px)" }}

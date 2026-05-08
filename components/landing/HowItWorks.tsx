@@ -13,7 +13,7 @@ export default function HowItWorks() {
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.05 }}
           transition={{ duration: 0.7 }}
           className="font-anton text-[clamp(48px,10vw,140px)] text-forest leading-none tracking-tight mb-16 md:mb-24"
         >
@@ -28,7 +28,7 @@ export default function HowItWorks() {
               key={step.number}
               initial={{ opacity: 0, x: -40 }}
               whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.05 }}
               transition={{ duration: 0.6, delay: i * 0.15 }}
               className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 py-10 md:py-14 group"
             >

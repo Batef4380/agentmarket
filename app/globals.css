@@ -35,6 +35,16 @@ body {
   background-size: 40px 40px;
 }
 
+@keyframes ticker-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes ticker-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

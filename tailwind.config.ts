@@ -17,8 +17,8 @@ const config: Config = {
         "text-muted": "#6B7B6B",
       },
       fontFamily: {
-        anton: ["Anton", "sans-serif"],
-        inter: ["Inter", "sans-serif"],
+        anton: ["var(--font-anton)", "Anton", "sans-serif"],
+        inter: ["var(--font-inter)", "Inter", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
     },

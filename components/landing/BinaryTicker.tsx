@@ -14,7 +14,6 @@ export default function BinaryTicker({
   dark = false,
 }: BinaryTickerProps) {
   const text = BINARY_TICKER_CONTENT;
-  const animationName = direction === "left" ? "ticker-left" : "ticker-right";
 
   return (
     <div
@@ -28,24 +27,13 @@ export default function BinaryTicker({
       <div
         className="flex whitespace-nowrap font-mono text-[10px] tracking-widest uppercase"
         style={{
-          animation: `${animationName} ${speed}s linear infinite`,
+          animation: `${direction === "left" ? "ticker-left" : "ticker-right"} ${speed}s linear infinite`,
           width: "max-content",
         }}
       >
         <span className="pr-8">{text}</span>
         <span className="pr-8">{text}</span>
       </div>
-
-      <style jsx>{`
-        @keyframes ticker-left {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-        @keyframes ticker-right {
-          from { transform: translateX(-50%); }
-          to { transform: translateX(0); }
-        }
-      `}</style>
     </div>
   );
 }

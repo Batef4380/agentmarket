@@ -40,7 +40,7 @@ export default function FeaturedAgents() {
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.05 }}
           transition={{ duration: 0.7 }}
           className="font-anton text-[clamp(20px,3.8vw,64px)] text-gold text-center tracking-[0.2em] uppercase mb-16 whitespace-nowrap"
         >
@@ -51,7 +51,7 @@ export default function FeaturedAgents() {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.05 }}
           variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
           className="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
