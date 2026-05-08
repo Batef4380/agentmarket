@@ -22,6 +22,7 @@ export default function Hero() {
     let raf = 0;
     let time = 0;
     let W = 0, H = 0;
+    let started = false;
     const dpr = window.devicePixelRatio || 1;
 
     // Line definitions — precompute random params once
@@ -42,16 +43,19 @@ export default function Hero() {
     const resize = () => {
       W = canvas.offsetWidth;
       H = canvas.offsetHeight;
-      if (W === 0 || H === 0) return;
+      if (!W || !H) return;
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       canvas.width  = W * dpr;
       canvas.height = H * dpr;
       ctx.scale(dpr, dpr);
 
-      // Distribute baselines evenly with padding
       const pad = H * 0.12;
       lines.forEach((ln, i) => {
         ln.baseline = pad + (i / (NUM_LINES - 1)) * (H - pad * 2);
       });
+
+      if (!started) { started = true; draw(); }
     };
 
     const draw = () => {
@@ -114,21 +118,9 @@ export default function Hero() {
     };
     const onLeave = () => { mousePosRef.current = { x: -9999, y: -9999 }; };
 
-    const ro = new ResizeObserver(() => {
-      // Reset scale before resizing
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      resize();
-    });
+    const ro = new ResizeObserver(resize);
     ro.observe(canvas);
-    resize();
-
-    if (W > 0 && H > 0) draw();
-    else {
-      // Wait for first resize
-      const start = () => { if (!raf) draw(); };
-      ro.observe(canvas);
-      setTimeout(start, 50);
-    }
+    resize(); // succeeds immediately if element already has size
 
     canvas.addEventListener("mousemove", onMove);
     canvas.addEventListener("mouseleave", onLeave);
