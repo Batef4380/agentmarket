@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Anton, Inter } from "next/font/google";
 import "./globals.css";
+import Web3Provider from "@/components/providers/Web3Provider";
 
 const anton = Anton({
   weight: "400",
@@ -40,7 +41,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-inter antialiased">{children}</body>
+      <body className="font-inter antialiased">
+        <Web3Provider>{children}</Web3Provider>
+      </body>
     </html>
   );
 }

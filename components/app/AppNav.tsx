@@ -1,15 +1,249 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useState, useEffect } from "react";
+
+function WalletButton() {
+  const { address, isConnected } = useAccount();
+  const { connect, connectors, error: connectError } = useConnect();
+  const { disconnect } = useDisconnect();
+  const [showMenu, setShowMenu] = useState(false);
+  const router = useRouter();
+
+  const shortAddr = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : null;
+
+  if (isConnected && address) {
+    return (
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <button
+          onClick={() => setShowMenu((v) => !v)}
+          style={{
+            fontFamily: "JetBrains Mono, monospace",
+            fontSize: 11,
+            letterSpacing: "0.1em",
+            color: "#C8A84B",
+            background: "rgba(200,168,75,0.1)",
+            border: "1px solid rgba(200,168,75,0.5)",
+            padding: "6px 16px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: "#4ade80",
+              display: "inline-block",
+              flexShrink: 0,
+            }}
+          />
+          {shortAddr}
+        </button>
+        {showMenu && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% + 8px)",
+              right: 0,
+              background: "#0F1F0F",
+              border: "1px solid rgba(200,168,75,0.3)",
+              minWidth: 160,
+              zIndex: 100,
+            }}
+          >
+            <button
+              onClick={() => { router.push("/profile"); setShowMenu(false); }}
+              style={{
+                width: "100%",
+                fontFamily: "JetBrains Mono, monospace",
+                fontSize: 11,
+                letterSpacing: "0.1em",
+                color: "#C8A84B",
+                background: "transparent",
+                border: "none",
+                borderBottom: "1px solid rgba(200,168,75,0.15)",
+                padding: "10px 16px",
+                textAlign: "left",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(200,168,75,0.1)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              VIEW PROFILE →
+            </button>
+            <button
+              onClick={() => { disconnect(); setShowMenu(false); }}
+              style={{
+                width: "100%",
+                fontFamily: "JetBrains Mono, monospace",
+                fontSize: 11,
+                letterSpacing: "0.1em",
+                color: "#F5F0E8",
+                background: "transparent",
+                border: "none",
+                padding: "10px 16px",
+                textAlign: "left",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(200,168,75,0.1)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              DISCONNECT
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const CONNECTOR_META: Record<string, { label: string; icon: string }> = {
+    injected: { label: "Browser Wallet", icon: "🦊" },
+    metaMask: { label: "MetaMask", icon: "🦊" },
+    coinbaseWallet: { label: "Coinbase Wallet", icon: "🔵" },
+    walletConnect: { label: "WalletConnect", icon: "🔗" },
+  };
+
+  const handleConnect = (connector: (typeof connectors)[0]) => {
+    connect(
+      { connector },
+      {
+        onError: (err) => console.error("Connect error:", err.message),
+      }
+    );
+    setShowMenu(false);
+  };
+
+  // Deduplicate: one entry per type
+  const uniqueConnectors = connectors.filter(
+    (c, i, arr) => arr.findIndex((x) => x.type === c.type) === i
+  );
+
+  return (
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      <button
+        onClick={() => setShowMenu((v) => !v)}
+        style={{
+          fontFamily: "JetBrains Mono, monospace",
+          fontSize: 11,
+          letterSpacing: "0.1em",
+          color: "#F5F0E8",
+          background: "transparent",
+          border: "1px solid rgba(200,168,75,0.5)",
+          padding: "6px 16px",
+          cursor: "pointer",
+          transition: "all 0.2s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#C8A84B";
+          e.currentTarget.style.color = "#0F1F0F";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "#F5F0E8";
+        }}
+      >
+        CONNECT
+      </button>
+      {showMenu && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            right: 0,
+            background: "#0F1F0F",
+            border: "1px solid rgba(200,168,75,0.3)",
+            minWidth: 220,
+            zIndex: 100,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "JetBrains Mono, monospace",
+              fontSize: 9,
+              letterSpacing: "0.2em",
+              color: "#6B7B6B",
+              padding: "10px 16px 6px",
+              textTransform: "uppercase",
+              borderBottom: "1px solid rgba(200,168,75,0.1)",
+              marginBottom: 4,
+            }}
+          >
+            Select Wallet
+          </p>
+          {uniqueConnectors.length === 0 && (
+            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B", padding: "12px 16px" }}>
+              No wallet detected
+            </p>
+          )}
+          {connectError && (
+            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#ef4444", padding: "6px 16px", borderTop: "1px solid rgba(239,68,68,0.2)" }}>
+              {connectError.message.slice(0, 60)}
+            </p>
+          )}
+          {uniqueConnectors.map((connector) => {
+            const meta = CONNECTOR_META[connector.type] ?? { label: connector.name, icon: "💼" };
+            return (
+              <button
+                key={connector.uid}
+                onClick={() => handleConnect(connector)}
+                style={{
+                  width: "100%",
+                  fontFamily: "JetBrains Mono, monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.08em",
+                  color: "#F5F0E8",
+                  background: "transparent",
+                  border: "none",
+                  padding: "11px 16px",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(200,168,75,0.1)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <span style={{ fontSize: 18, lineHeight: 1 }}>{meta.icon}</span>
+                {meta.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AppNav() {
   const pathname = usePathname();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    try {
+      const pool = JSON.parse(localStorage.getItem("stovera_pool") || "[]");
+      const pending = pool.filter((a: { status: string }) => a.status === "pending").length;
+      // Add mock pending count (4 mock agents)
+      setPendingCount(pending + 4);
+    } catch {
+      setPendingCount(4);
+    }
+  }, [pathname]);
 
   const tabs = [
     { label: "HOME", href: "/home" },
     { label: "MARKET", href: "/market" },
+    { label: "VERIFY", href: "/verify", badge: pendingCount > 0 ? String(pendingCount) : undefined },
+    { label: "PROFILE", href: "/profile" },
     { label: "PREDICTIONS", href: "/predictions", soon: true },
   ];
 
@@ -86,16 +320,13 @@ export default function AppNav() {
               >
                 {tab.label}
                 {tab.soon && (
-                  <span
-                    style={{
-                      fontSize: 8,
-                      letterSpacing: "0.1em",
-                      padding: "1px 5px",
-                      background: "rgba(200,168,75,0.15)",
-                      color: "#C8A84B",
-                    }}
-                  >
+                  <span style={{ fontSize: 8, letterSpacing: "0.1em", padding: "1px 5px", background: "rgba(200,168,75,0.15)", color: "#C8A84B" }}>
                     SOON
+                  </span>
+                )}
+                {"badge" in tab && tab.badge && (
+                  <span style={{ fontSize: 8, padding: "1px 5px", background: "#C8A84B", color: "#0F1F0F", fontFamily: "JetBrains Mono, monospace", letterSpacing: 0 }}>
+                    {tab.badge}
                   </span>
                 )}
                 {active && !tab.soon && (
@@ -118,30 +349,7 @@ export default function AppNav() {
         </div>
 
         {/* Wallet connect */}
-        <button
-          style={{
-            fontFamily: "JetBrains Mono, monospace",
-            fontSize: 11,
-            letterSpacing: "0.1em",
-            color: "#F5F0E8",
-            background: "transparent",
-            border: "1px solid rgba(200,168,75,0.5)",
-            padding: "6px 16px",
-            cursor: "pointer",
-            flexShrink: 0,
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#C8A84B";
-            e.currentTarget.style.color = "#0F1F0F";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "#F5F0E8";
-          }}
-        >
-          CONNECT
-        </button>
+        <WalletButton />
       </div>
     </nav>
   );
