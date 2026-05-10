@@ -293,7 +293,14 @@ export default function MarketPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [verifiedAgents, setVerifiedAgents] = useState<typeof ALL_AGENTS>([]);
   const [cosmicPicks, setCosmicPicks] = useState<typeof ALL_AGENTS | null>(null);
-  const [cosmicMeta, setCosmicMeta] = useState<{ seed: string; seq: number | null; live: boolean } | null>(null);
+  const [cosmicMeta, setCosmicMeta] = useState<{
+    seed: string;
+    seq: number | null;
+    live: boolean;
+    source: string;
+    signature: string | null;
+    via: string;
+  } | null>(null);
 
   useEffect(() => {
     const pool = JSON.parse(localStorage.getItem("stovera_pool") || "[]");
@@ -308,59 +315,52 @@ export default function MarketPage() {
 
   useEffect(() => {
     async function fetchCosmicRandom() {
-      const IPNS = "k2k4r8lvomw737sajfnpav0dpeernugnryng50uheyk1k39lursmn09f";
-      const gateways = [
-        `https://ipfs.io/ipns/${IPNS}`,
-        `https://dweb.link/ipns/${IPNS}`,
-        `https://cloudflare-ipfs.com/ipns/${IPNS}`,
-      ];
-
-      let ctrng: string[] = [];
+      let values: string[] = [];
+      let source = "date_seeded";
+      let signature: string | null = null;
       let seq: number | null = null;
       let live = false;
+      let via = "fallback";
 
-      for (const url of gateways) {
-        try {
-          const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-          if (!res.ok) continue;
+      try {
+        const res = await fetch("/api/random", { signal: AbortSignal.timeout(10000) });
+        if (res.ok) {
           const json = await res.json();
-          ctrng = json.data?.ctrng ?? [];
-          seq = json.data?.sequence ?? null;
-          live = true;
-          break;
-        } catch {
-          continue;
+          values = json.values ?? [];
+          source = json.source ?? "unknown";
+          signature = json.signature ?? null;
+          seq = json.sequence ?? null;
+          live = json.live ?? false;
+          via = json.via ?? "unknown";
         }
-      }
-
-      // Fallback: date-seeded deterministic
-      if (ctrng.length === 0) {
-        const d = new Date();
-        const n = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-        ctrng = [
-          (n * 2654435761).toString(16).padStart(64, "0"),
-          (n * 40503 + 7).toString(16).padStart(64, "0"),
-          (n * 6364136223 + 1442695040888963407).toString(16).padStart(64, "0"),
-        ];
+      } catch {
+        // fallback handled below
       }
 
       const pool = ALL_AGENTS;
       const seen = new Set<string>();
       const picks: typeof ALL_AGENTS = [];
-      for (const hex of ctrng) {
+
+      for (const hex of values) {
         const idx = parseInt(hex.slice(0, 8), 16) % pool.length;
         const agent = pool[idx];
         if (!seen.has(agent.id)) { seen.add(agent.id); picks.push(agent); }
         if (picks.length === 3) break;
       }
-      // fill up if duplicates
       for (const a of pool) {
         if (picks.length >= 3) break;
         if (!seen.has(a.id)) { seen.add(a.id); picks.push(a); }
       }
 
       setCosmicPicks(picks.slice(0, 3));
-      setCosmicMeta({ seed: ctrng[0]?.slice(0, 16) ?? "???", seq, live });
+      setCosmicMeta({
+        seed: values[0]?.slice(0, 16) ?? "???",
+        seq,
+        live,
+        source,
+        signature,
+        via,
+      });
     }
     fetchCosmicRandom();
   }, []);
@@ -547,27 +547,42 @@ export default function MarketPage() {
                   </p>
                 </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  background: "rgba(200,168,75,0.08)", border: "1px solid rgba(200,168,75,0.25)",
-                  padding: "6px 12px",
-                }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: cosmicMeta?.live ? "#4ade80" : "#6B7B6B" }} />
-                  <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C8A84B", letterSpacing: "0.1em" }}>
-                    {cosmicMeta?.live ? "LIVE" : "DATE-SEEDED"}
-                  </span>
-                  <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B", letterSpacing: "0.05em" }}>
-                    seed: {cosmicMeta?.seed}
-                  </span>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                {/* Status pill */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    background: cosmicMeta?.via === "orbitport_api" ? "rgba(74,222,128,0.1)" : "rgba(200,168,75,0.08)",
+                    border: cosmicMeta?.via === "orbitport_api" ? "1px solid rgba(74,222,128,0.4)" : "1px solid rgba(200,168,75,0.25)",
+                    padding: "5px 10px",
+                  }}>
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: cosmicMeta?.live ? "#4ade80" : "#6B7B6B" }} />
+                    <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: cosmicMeta?.live ? "#4ade80" : "#6B7B6B", letterSpacing: "0.1em" }}>
+                      {cosmicMeta?.via === "orbitport_api" ? "SATELLITE · LIVE" : cosmicMeta?.via === "ipfs_beacon" ? "IPFS BEACON · LIVE" : "DATE-SEEDED"}
+                    </span>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.1em" }}>POWERED BY</p>
+                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C8A84B", letterSpacing: "0.05em" }}>
+                      SpaceComputer cTRNG{cosmicMeta?.seq ? ` · seq #${cosmicMeta.seq}` : ""}
+                    </p>
+                  </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.1em" }}>
-                    POWERED BY
+                {/* Seed + signature */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.05em" }}>
+                    entropy: <span style={{ color: "rgba(200,168,75,0.6)" }}>{cosmicMeta?.seed}...</span>
                   </p>
-                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C8A84B", letterSpacing: "0.05em" }}>
-                    SpaceComputer cTRNG{cosmicMeta?.seq ? ` · #${cosmicMeta.seq}` : ""}
-                  </p>
+                  {cosmicMeta?.source && cosmicMeta.source !== "date_seeded" && (
+                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.05em" }}>
+                      source: <span style={{ color: "#4ade80" }}>{cosmicMeta.source}</span>
+                    </p>
+                  )}
+                  {cosmicMeta?.signature && (
+                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.05em" }}>
+                      sig: <span style={{ color: "rgba(74,222,128,0.6)" }}>{cosmicMeta.signature.slice(0, 20)}...</span>
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
