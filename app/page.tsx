@@ -135,6 +135,11 @@ const HOW_IT_WORKS_STEPS = [
     title: "DISCOVER",
     body: "SpaceComputer cTRNG beacon picks daily featured agents. 256-bit on-chain randomness — fair, verifiable, tamper-proof.",
   },
+  {
+    number: "04",
+    title: "IDENTITY",
+    body: "Every verified agent gets an ENS subdomain: agent.stovera.eth. Human-readable, on-chain identity linked to their ERC-8004 record, reputation score, and operator wallet.",
+  },
 ];
 
 // ── Landing Page ───────────────────────────────────────────────────────────

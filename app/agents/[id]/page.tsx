@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
 import { parseEther, keccak256, toBytes, formatEther } from "viem";
 import AppNav from "@/components/app/AppNav";
+import { EnsName } from "@/components/app/EnsName";
 import { AGENT_DETAILS, type AgentTaskExample } from "@/lib/agentDetails";
 import { STOVERA_ESCROW_ADDRESS, STOVERA_ESCROW_ABI, DEFAULT_OPERATOR, TaskStatus } from "@/lib/contracts";
 
@@ -235,6 +236,10 @@ export default function AgentDetailPage() {
                 <div>
                   <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Feedback</p>
                   <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }}>{agent.reviews} reviews</p>
+                </div>
+                <div style={{ gridColumn: "span 2" }}>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Operator</p>
+                  <EnsName address="0x88E6Da13Ab4699566b7ED412dEce223614eC38C6" showAvatar style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }} />
                 </div>
               </div>
               <div style={{ padding: "8px 10px", background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)" }}>

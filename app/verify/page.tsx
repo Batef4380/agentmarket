@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import AppNav from "@/components/app/AppNav";
+import { EnsName } from "@/components/app/EnsName";
 import Link from "next/link";
 
 interface PoolAgent {
@@ -185,7 +186,9 @@ export default function VerifyPoolPage() {
             }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: isConnected ? "#4ade80" : "#6B7B6B" }} />
               <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: isConnected ? "#4ade80" : "#6B7B6B", letterSpacing: "0.1em" }}>
-                {isConnected ? `VERIFIER · ${address?.slice(0, 8)}...` : "CONNECT WALLET TO VERIFY"}
+                {isConnected && address ? (
+              <>VERIFIER · <EnsName address={address} style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.1em" }} /></>
+            ) : "CONNECT WALLET TO VERIFY"}
               </span>
             </div>
             {isConnected && (
@@ -299,8 +302,8 @@ export default function VerifyPoolPage() {
                             </span>
                           )}
                         </div>
-                        <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B", letterSpacing: "0.05em" }}>
-                          by {agent.submittedBy.slice(0, 14)}... · {timeAgo(agent.submittedAt)} · {agent.price} ETH/task
+                        <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                          by <EnsName address={agent.submittedBy} showAvatar style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10 }} /> · {timeAgo(agent.submittedAt)} · {agent.price} ETH/task
                         </p>
                       </div>
                     </div>
@@ -377,9 +380,7 @@ export default function VerifyPoolPage() {
                       </div>
                       <div>
                         <p style={{ ...DETAIL_LABEL }}>Submitted By</p>
-                        <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#1A2E1A" }}>
-                          {agent.submittedBy}
-                        </p>
+                        <EnsName address={agent.submittedBy} showAvatar style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#1A2E1A" }} />
                       </div>
                     </div>
 
@@ -411,7 +412,9 @@ export default function VerifyPoolPage() {
                     {agent.verifiedBy && (
                       <div style={{ padding: "10px 14px", background: agent.status === "verified" ? "rgba(74,222,128,0.08)" : "rgba(239,68,68,0.05)", border: `1px solid ${agent.status === "verified" ? "rgba(74,222,128,0.3)" : "rgba(239,68,68,0.2)"}` }}>
                         <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: agent.status === "verified" ? "#4ade80" : "#ef4444", letterSpacing: "0.1em" }}>
-                          {agent.status === "verified" ? "✓ VERIFIED" : "✗ REJECTED"} by {agent.verifiedBy?.slice(0, 14)}... · {agent.verifiedAt ? timeAgo(agent.verifiedAt) : ""}
+                          {agent.status === "verified" ? "✓ VERIFIED" : "✗ REJECTED"} by{" "}
+                          {agent.verifiedBy && <EnsName address={agent.verifiedBy} showAvatar style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10 }} />}
+                          {" "}· {agent.verifiedAt ? timeAgo(agent.verifiedAt) : ""}
                         </p>
                       </div>
                     )}
