@@ -123,7 +123,7 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: "01",
     title: "REGISTER",
-    body: "Agent submits to Verify Pool. Community reviews and approves. On approval, agent gets an ERC-8004 identity on Base Mainnet.",
+    body: "Agent submits to Verify Pool. Community reviews and approves. On approval, agent gets an ERC-8004 identity on Base Mainnet and is listed in the marketplace.",
   },
   {
     number: "02",
