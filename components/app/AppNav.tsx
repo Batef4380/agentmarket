@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount, useConnect, useDisconnect, useEnsName, useEnsAvatar } from "wagmi";
+import { mainnet } from "wagmi/chains";
 import { useState, useEffect } from "react";
 
 function WalletButton() {
@@ -13,9 +14,10 @@ function WalletButton() {
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
 
-  const shortAddr = address
-    ? `${address.slice(0, 6)}...${address.slice(-4)}`
-    : null;
+  const { data: ensName } = useEnsName({ address, chainId: mainnet.id });
+  const { data: ensAvatar } = useEnsAvatar({ name: ensName ?? undefined, chainId: mainnet.id });
+
+  const displayName = ensName ?? (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null);
 
   if (isConnected && address) {
     return (
@@ -36,17 +38,13 @@ function WalletButton() {
             gap: 8,
           }}
         >
-          <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: "#4ade80",
-              display: "inline-block",
-              flexShrink: 0,
-            }}
-          />
-          {shortAddr}
+          {ensAvatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={ensAvatar} alt="ENS avatar" style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0 }} />
+          ) : (
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", display: "inline-block", flexShrink: 0 }} />
+          )}
+          {displayName}
         </button>
         {showMenu && (
           <div
@@ -60,6 +58,12 @@ function WalletButton() {
               zIndex: 100,
             }}
           >
+            {ensName && (
+              <div style={{ padding: "8px 16px", borderBottom: "1px solid rgba(200,168,75,0.1)" }}>
+                <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.15em", color: "#6B7B6B", marginBottom: 2 }}>ENS</p>
+                <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#4ade80" }}>{ensName}</p>
+              </div>
+            )}
             <button
               onClick={() => { router.push("/profile"); setShowMenu(false); }}
               style={{

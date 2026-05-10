@@ -1,7 +1,7 @@
 "use client";
 
 import { WagmiProvider, createConfig, http } from "wagmi";
-import { base } from "wagmi/chains";
+import { base, mainnet } from "wagmi/chains";
 import { metaMask, coinbaseWallet, walletConnect } from "wagmi/connectors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
@@ -13,7 +13,7 @@ function buildConfig() {
   const validProjectId = projectId && projectId !== "your_project_id_here" ? projectId : "";
 
   return createConfig({
-    chains: [base],
+    chains: [base, mainnet],
     connectors: [
       metaMask(),
       coinbaseWallet({ appName: "Stovera" }),
@@ -21,6 +21,7 @@ function buildConfig() {
     ],
     transports: {
       [base.id]: http(),
+      [mainnet.id]: http("https://eth.llamarpc.com"), // ENS resolution (read-only)
     },
   });
 }
