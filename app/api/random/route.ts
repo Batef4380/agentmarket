@@ -6,17 +6,24 @@ const CLIENT_SECRET = process.env.ORBITPORT_CLIENT_SECRET;
 const AUTH_URL = process.env.ORBITPORT_AUTH_URL ?? "https://dev-1usujmbby8627ni8.us.auth0.com";
 const API_URL = process.env.ORBITPORT_API_URL ?? "https://op.spacecomputer.io";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnySDK = Record<string, any>;
+
+async function getRandom(sdk: AnySDK) {
+  return sdk.ctrngService.random();
+}
+
 export async function GET() {
-  // Priority 1: Authenticated Orbitport API (real satellite cTRNG, requires credentials)
+  // Priority 1: Authenticated Orbitport API (real satellite cTRNG)
   if (CLIENT_ID && CLIENT_SECRET) {
     try {
       const sdk = createOrbitportSDK({
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET,
-        authUrl: AUTH_URL,
+        authDomain: AUTH_URL,
         apiUrl: API_URL,
-      });
-      const result = await sdk.ctrngService.random();
+      }) as AnySDK;
+      const result = await getRandom(sdk);
       if (result.success && result.data) {
         const d = result.data as Record<string, unknown>;
         return NextResponse.json({
@@ -37,8 +44,8 @@ export async function GET() {
 
   // Priority 2: Public IPFS beacon via SDK (no credentials needed)
   try {
-    const sdk = createOrbitportSDK({});
-    const result = await sdk.ctrngService.random();
+    const sdk = createOrbitportSDK({}) as AnySDK;
+    const result = await getRandom(sdk);
     if (result.success && result.data) {
       const d = result.data as Record<string, unknown>;
       return NextResponse.json({
@@ -56,7 +63,7 @@ export async function GET() {
     console.log("[cTRNG] IPFS beacon error:", (e as Error).message);
   }
 
-  // Priority 3: Date-seeded deterministic fallback (changes daily, fully offline)
+  // Priority 3: Date-seeded deterministic fallback (changes daily)
   const d = new Date();
   const n = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
   const s1 = ((n * 2654435761) >>> 0).toString(16).padStart(8, "0");
