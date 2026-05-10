@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
+import { parseEther, keccak256, toBytes, formatEther } from "viem";
 import AppNav from "@/components/app/AppNav";
 import { AGENT_DETAILS, type AgentTaskExample } from "@/lib/agentDetails";
+import { STOVERA_ESCROW_ADDRESS, STOVERA_ESCROW_ABI, DEFAULT_OPERATOR, TaskStatus } from "@/lib/contracts";
 
 const STARS = (score: number) =>
   [1, 2, 3, 4, 5].map((i) => (
@@ -12,17 +14,90 @@ const STARS = (score: number) =>
   ));
 
 function fmtEth(val: string) {
-  return parseFloat(val).toFixed(5).replace(/\.?0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1") + " ETH";
+  const n = parseFloat(val);
+  if (n === 0) return "0 ETH";
+  return n.toFixed(5).replace(/0+$/, "").replace(/\.$/, "") + " ETH";
+}
+
+// Generate a deterministic task ID from timestamp + agent + wallet
+function generateTaskId(agentId: string, userAddress: string): `0x${string}` {
+  const raw = `${agentId}-${userAddress}-${Date.now()}`;
+  return keccak256(toBytes(raw));
 }
 
 export default function AgentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const agent = AGENT_DETAILS[id as string];
 
   const [selectedTask, setSelectedTask] = useState<AgentTaskExample | null>(null);
-  const [depositStep, setDepositStep] = useState<"idle" | "confirm" | "sent">("idle");
+  const [taskId, setTaskId] = useState<`0x${string}` | null>(null);
+  const [step, setStep] = useState<"idle" | "confirm" | "pending" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const depositAmount = selectedTask
+    ? parseEther((parseFloat(selectedTask.estimateHigh) * agent?.depositMultiplier || 1).toFixed(6) as `${number}`)
+    : undefined;
+
+  // Write contract hook
+  const { writeContract, data: txHash, isPending: isWriting, error: writeError } = useWriteContract();
+
+  // Wait for transaction
+  const { isLoading: isConfirming, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  // Read task status from chain (after deposit)
+  const { data: onChainTask } = useReadContract({
+    address: STOVERA_ESCROW_ADDRESS,
+    abi: STOVERA_ESCROW_ABI,
+    functionName: "getTask",
+    args: taskId ? [taskId] : undefined,
+    query: { enabled: !!taskId && step === "success" },
+  });
+
+  useEffect(() => {
+    if (isTxSuccess && taskId && selectedTask && address && agent) {
+      setStep("success");
+      // Persist to Supabase
+      fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskIdBytes32: taskId,
+          agentId: agent.id,
+          userAddress: address,
+          operatorAddress: DEFAULT_OPERATOR,
+          depositEth: formatEther(depositAmount ?? 0n),
+          txHashDeposit: txHash ?? null,
+        }),
+      }).catch((e) => console.error("Failed to save task to DB:", e));
+    }
+  }, [isTxSuccess]);
+
+  useEffect(() => {
+    if (writeError) {
+      setErrorMsg(writeError.message.slice(0, 100));
+      setStep("error");
+    }
+  }, [writeError]);
+
+  const handleDeposit = () => {
+    if (!address || !selectedTask || !depositAmount) return;
+    const id = generateTaskId(agent.id, address);
+    setTaskId(id);
+    setStep("pending");
+    setErrorMsg("");
+
+    writeContract({
+      address: STOVERA_ESCROW_ADDRESS,
+      abi: STOVERA_ESCROW_ABI,
+      functionName: "depositForTask",
+      args: [id, DEFAULT_OPERATOR],
+      value: depositAmount,
+    });
+  };
 
   if (!agent) {
     return (
@@ -38,12 +113,8 @@ export default function AgentDetailPage() {
     );
   }
 
-  const depositAmount = selectedTask
-    ? (parseFloat(selectedTask.estimateHigh) * agent.depositMultiplier).toFixed(6)
-    : null;
-
   const refundEstimate = selectedTask && depositAmount
-    ? (parseFloat(depositAmount) - parseFloat(selectedTask.estimateLow)).toFixed(6)
+    ? formatEther(depositAmount - parseEther(selectedTask.estimateLow as `${number}`))
     : null;
 
   return (
@@ -52,17 +123,11 @@ export default function AgentDetailPage() {
 
       {/* Hero */}
       <div style={{ background: "#0F1F0F", borderBottom: "1px solid rgba(200,168,75,0.3)" }}>
-        {/* Gradient bar */}
         <div style={{ height: 5, background: agent.gradient }} />
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 36px", display: "flex", alignItems: "flex-start", gap: 32, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 280 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: 9,
-                letterSpacing: "0.2em", textTransform: "uppercase",
-                background: "rgba(200,168,75,0.15)", color: "#C8A84B",
-                padding: "3px 9px", border: "1px solid rgba(200,168,75,0.3)",
-              }}>
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", background: "rgba(200,168,75,0.15)", color: "#C8A84B", padding: "3px 9px", border: "1px solid rgba(200,168,75,0.3)" }}>
                 {agent.category}
               </span>
               <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B" }}>#{agent.id}</span>
@@ -70,7 +135,7 @@ export default function AgentDetailPage() {
             <h1 style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: "clamp(28px, 4vw, 52px)", color: "#F5F0E8", letterSpacing: "0.02em", lineHeight: 1.1, marginBottom: 10 }}>
               {agent.name}
             </h1>
-            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 13, color: "#6B7B6B", lineHeight: 1.6, maxWidth: 520, marginBottom: 20 }}>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 15, color: "#6B7B6B", lineHeight: 1.6, maxWidth: 520, marginBottom: 20 }}>
               {agent.tagline}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -80,25 +145,18 @@ export default function AgentDetailPage() {
                 <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B" }}>({agent.reviews} reviews)</span>
               </div>
               <div style={{ width: 1, height: 20, background: "rgba(200,168,75,0.2)" }} />
-              <div>
-                <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#C8A84B", letterSpacing: "0.05em" }}>{agent.priceLabel}</span>
-                <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B", marginLeft: 8 }}>base rate</span>
-              </div>
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#C8A84B" }}>{agent.priceLabel}</span>
             </div>
           </div>
 
           {/* Price card */}
           <div style={{ background: "rgba(245,240,232,0.05)", border: "1px solid rgba(200,168,75,0.3)", padding: "24px", minWidth: 260 }}>
-            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", color: "#6B7B6B", textTransform: "uppercase", marginBottom: 12 }}>
-              Pricing Model
-            </p>
-            <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 28, color: "#C8A84B", lineHeight: 1, marginBottom: 4 }}>
-              {agent.priceLabel}
-            </p>
+            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", color: "#6B7B6B", textTransform: "uppercase", marginBottom: 12 }}>Pricing Model</p>
+            <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 28, color: "#C8A84B", lineHeight: 1, marginBottom: 4 }}>{agent.priceLabel}</p>
             <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B", lineHeight: 1.6, marginBottom: 16 }}>
               Billed by actual compute time.<br />
-              You deposit {agent.depositMultiplier}× the task estimate upfront.<br />
-              Unused portion is refunded automatically.
+              You deposit {agent.depositMultiplier}× estimate upfront.<br />
+              Unused portion refunded automatically.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.2)" }}>
               <span style={{ color: "#4ade80", fontSize: 12 }}>↩</span>
@@ -112,14 +170,10 @@ export default function AgentDetailPage() {
 
         {/* ── LEFT / MAIN ─────────────────────────────────────────── */}
         <div style={{ flex: 1, minWidth: 300, display: "flex", flexDirection: "column", gap: 24 }}>
-
-          {/* Description */}
           <div style={{ background: "#fff", border: "2px solid #1A2E1A" }}>
             <SectionHeader label="What this agent does" />
             <div style={{ padding: "20px 24px" }}>
-              <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: "#1A2E1A", lineHeight: 1.75, marginBottom: 20, opacity: 0.85 }}>
-                {agent.longDescription}
-              </p>
+              <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: "#1A2E1A", lineHeight: 1.75, marginBottom: 20, opacity: 0.85 }}>{agent.longDescription}</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {agent.whatItDoes.map((item, i) => (
                   <div key={i} style={{ display: "flex", gap: 12 }}>
@@ -131,7 +185,6 @@ export default function AgentDetailPage() {
             </div>
           </div>
 
-          {/* Limitations */}
           <div style={{ background: "#fff", border: "2px solid #1A2E1A" }}>
             <SectionHeader label="Limitations" />
             <div style={{ padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -144,19 +197,11 @@ export default function AgentDetailPage() {
             </div>
           </div>
 
-          {/* Capabilities */}
           <div style={{ background: "#fff", border: "2px solid #1A2E1A" }}>
             <SectionHeader label="Capabilities" />
             <div style={{ padding: "16px 24px", display: "flex", flexWrap: "wrap", gap: 8 }}>
               {agent.capabilities.map((c) => (
-                <span key={c} style={{
-                  fontFamily: "JetBrains Mono, monospace", fontSize: 10,
-                  letterSpacing: "0.05em", color: "#1A2E1A",
-                  border: "1px solid rgba(26,46,26,0.35)", padding: "4px 10px",
-                  background: "rgba(26,46,26,0.04)",
-                }}>
-                  {c}
-                </span>
+                <span key={c} style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.05em", color: "#1A2E1A", border: "1px solid rgba(26,46,26,0.35)", padding: "4px 10px", background: "rgba(26,46,26,0.04)" }}>{c}</span>
               ))}
             </div>
           </div>
@@ -174,7 +219,7 @@ export default function AgentDetailPage() {
                 return (
                   <button
                     key={i}
-                    onClick={() => { setSelectedTask(task); setDepositStep("idle"); }}
+                    onClick={() => { setSelectedTask(task); setStep("idle"); setTaskId(null); }}
                     style={{
                       display: "flex", flexDirection: "column", gap: 6,
                       padding: "16px 20px", textAlign: "left",
@@ -187,17 +232,11 @@ export default function AgentDetailPage() {
                     onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "rgba(26,46,26,0.03)"; }}
                     onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 12, color: isSelected ? "#1A2E1A" : "#1A2E1A", fontWeight: isSelected ? "bold" : "normal" }}>
-                        {task.name}
-                      </span>
-                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B", whiteSpace: "nowrap" }}>
-                        {task.duration}
-                      </span>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
+                      <span style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: "#1A2E1A", fontWeight: isSelected ? 700 : 500 }}>{task.name}</span>
+                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B", whiteSpace: "nowrap" }}>{task.duration}</span>
                     </div>
-                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "#6B7B6B", lineHeight: 1.5 }}>
-                      {task.description}
-                    </p>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: "#6B7B6B", lineHeight: 1.55 }}>{task.description}</p>
                     <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#C8A84B" }}>
                       ~{fmtEth(task.estimateLow)} – {fmtEth(task.estimateHigh)}
                     </span>
@@ -207,13 +246,13 @@ export default function AgentDetailPage() {
             </div>
           </div>
 
-          {/* Cost breakdown */}
+          {/* Cost + payment */}
           {selectedTask && (
-            <div style={{ background: "#fff", border: "2px solid #C8A84B" }}>
+            <div style={{ background: "#fff", border: `2px solid ${step === "success" ? "#4ade80" : step === "error" ? "#ef4444" : "#C8A84B"}` }}>
               <SectionHeader label="Cost Estimate" gold />
               <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
                 <CostRow label="Task" value={selectedTask.name} mono />
-                <CostRow label="Duration estimate" value={selectedTask.duration} />
+                <CostRow label="Duration" value={selectedTask.duration} />
                 <CostRow label="Min cost" value={`~${fmtEth(selectedTask.estimateLow)}`} />
                 <CostRow label="Max cost" value={`~${fmtEth(selectedTask.estimateHigh)}`} />
                 <div style={{ height: 1, background: "rgba(200,168,75,0.2)", margin: "4px 0" }} />
@@ -222,29 +261,20 @@ export default function AgentDetailPage() {
                     DEPOSIT ({agent.depositMultiplier}× max)
                   </span>
                   <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 20, color: "#C8A84B" }}>
-                    {depositAmount} ETH
+                    {depositAmount ? formatEther(depositAmount) : "—"} ETH
                   </span>
                 </div>
                 <div style={{ padding: "8px 10px", background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.2)" }}>
-                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#4ade80", letterSpacing: "0.08em", lineHeight: 1.6 }}>
-                    ↩ UP TO ~{refundEstimate} ETH REFUNDED<br />
-                    after task completes (actual cost deducted)
+                  <p style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "#4ade80", lineHeight: 1.6 }}>
+                    ↩ Up to ~{refundEstimate} ETH refunded after task completes (actual cost deducted)
                   </p>
                 </div>
 
-                {depositStep === "idle" && (
+                {/* CTA states */}
+                {step === "idle" && (
                   <button
-                    onClick={() => isConnected ? setDepositStep("confirm") : null}
-                    style={{
-                      marginTop: 4,
-                      fontFamily: "var(--font-anton), Anton, sans-serif",
-                      fontSize: 14, letterSpacing: "0.08em",
-                      color: "#F5F0E8",
-                      background: isConnected ? "#1A2E1A" : "#6B7B6B",
-                      border: "none", padding: "13px 0",
-                      cursor: isConnected ? "pointer" : "not-allowed",
-                      width: "100%", transition: "background 0.2s",
-                    }}
+                    onClick={() => isConnected ? setStep("confirm") : null}
+                    style={{ marginTop: 4, fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 14, letterSpacing: "0.08em", color: "#F5F0E8", background: isConnected ? "#1A2E1A" : "#6B7B6B", border: "none", padding: "13px 0", cursor: isConnected ? "pointer" : "not-allowed", width: "100%", transition: "background 0.2s" }}
                     onMouseEnter={(e) => { if (isConnected) e.currentTarget.style.background = "#C8A84B"; }}
                     onMouseLeave={(e) => { if (isConnected) e.currentTarget.style.background = "#1A2E1A"; }}
                   >
@@ -252,44 +282,69 @@ export default function AgentDetailPage() {
                   </button>
                 )}
 
-                {depositStep === "confirm" && (
+                {step === "confirm" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ padding: "10px 12px", background: "rgba(200,168,75,0.08)", border: "1px solid rgba(200,168,75,0.3)" }}>
-                      <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C8A84B", lineHeight: 1.7 }}>
-                        You will deposit <strong>{depositAmount} ETH</strong>.<br />
-                        Actual cost deducted. Remainder refunded.
+                      <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: "#C8A84B", lineHeight: 1.7 }}>
+                        Deposit <strong>{depositAmount ? formatEther(depositAmount) : "—"} ETH</strong> on Base Mainnet. Actual cost deducted — remainder refunded automatically.
                       </p>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      <button
-                        onClick={() => setDepositStep("idle")}
-                        style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#6B7B6B", background: "transparent", border: "1px solid rgba(107,123,107,0.4)", padding: "10px 0", cursor: "pointer" }}
-                      >
+                      <button onClick={() => setStep("idle")} style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#6B7B6B", background: "transparent", border: "1px solid rgba(107,123,107,0.4)", padding: "10px 0", cursor: "pointer" }}>
                         CANCEL
                       </button>
-                      <button
-                        onClick={() => setDepositStep("sent")}
-                        style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 13, color: "#0F1F0F", background: "#C8A84B", border: "none", padding: "10px 0", cursor: "pointer" }}
-                      >
+                      <button onClick={handleDeposit} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 13, color: "#0F1F0F", background: "#C8A84B", border: "none", padding: "10px 0", cursor: "pointer" }}>
                         CONFIRM →
                       </button>
                     </div>
                   </div>
                 )}
 
-                {depositStep === "sent" && (
-                  <div style={{ padding: "16px", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.3)", textAlign: "center" }}>
-                    <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, color: "#4ade80", marginBottom: 4 }}>TASK QUEUED ✓</p>
-                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B", lineHeight: 1.6 }}>
-                      Deposit sent. You will be notified<br />when the task completes and refund is issued.
+                {(step === "pending" || isWriting || isConfirming) && (
+                  <div style={{ padding: "16px", background: "rgba(200,168,75,0.06)", border: "1px solid rgba(200,168,75,0.3)", textAlign: "center" }}>
+                    <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 14, color: "#C8A84B", marginBottom: 6 }}>
+                      {isWriting ? "CONFIRM IN WALLET..." : "CONFIRMING ON CHAIN..."}
                     </p>
+                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B" }}>
+                      {txHash ? `tx: ${txHash.slice(0, 18)}...` : "Waiting for signature"}
+                    </p>
+                  </div>
+                )}
+
+                {step === "success" && (
+                  <div style={{ padding: "16px", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.3)", textAlign: "center" }}>
+                    <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, color: "#4ade80", marginBottom: 6 }}>TASK QUEUED ✓</p>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: "#6B7B6B", lineHeight: 1.7, marginBottom: 10 }}>
+                      Deposit confirmed on Base Mainnet.<br />
+                      Refund sent automatically when task completes.
+                    </p>
+                    {txHash && (
+                      <a
+                        href={`https://basescan.org/tx/${txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C8A84B", letterSpacing: "0.1em" }}
+                      >
+                        VIEW ON BASESCAN →
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {step === "error" && (
+                  <div style={{ padding: "12px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: "#ef4444", lineHeight: 1.6 }}>
+                      {errorMsg || "Transaction failed. Please try again."}
+                    </p>
+                    <button onClick={() => setStep("idle")} style={{ marginTop: 8, fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B", background: "transparent", border: "1px solid rgba(107,123,107,0.3)", padding: "6px 12px", cursor: "pointer" }}>
+                      TRY AGAIN
+                    </button>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Back */}
           <button
             onClick={() => router.push("/market")}
             style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, letterSpacing: "0.1em", color: "#6B7B6B", background: "transparent", border: "1px solid rgba(107,123,107,0.3)", padding: "10px 0", cursor: "pointer", width: "100%", transition: "all 0.15s" }}
@@ -307,9 +362,7 @@ export default function AgentDetailPage() {
 function SectionHeader({ label, gold }: { label: string; gold?: boolean }) {
   return (
     <div style={{ padding: "12px 20px", borderBottom: "1px solid rgba(26,46,26,0.1)", background: gold ? "rgba(200,168,75,0.06)" : "#1A2E1A" }}>
-      <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: gold ? "#C8A84B" : "#C8A84B" }}>
-        {label}
-      </p>
+      <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "#C8A84B" }}>{label}</p>
     </div>
   );
 }

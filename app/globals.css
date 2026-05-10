@@ -9,6 +9,8 @@
   --leaf: #4ade80;
   --dark-surface: #0F1F0F;
   --text-muted: #6B7B6B;
+  --font-anton: "Anton";
+  --font-inter: "Inter";
 }
 
 * {
