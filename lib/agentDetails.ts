@@ -24,6 +24,7 @@ export interface AgentDetail {
   limitations: string[];
   tasks: AgentTaskExample[];
   gradient: string;
+  erc8004Id: string; // ERC-8004 on-chain identity: eip155:{chainId}:{registry}:{agentId}
 }
 
 export const AGENT_DETAILS: Record<string, AgentDetail> = {
@@ -78,6 +79,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #4ade80 0%, #0F1F0F 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:1",
   },
 
   "contract-auditor": {
@@ -131,6 +133,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #7f1d1d 0%, #0F1F0F 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:2",
   },
 
   "market-analyst": {
@@ -184,6 +187,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #C8A84B 0%, #1A2E1A 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:3",
   },
 
   "code-reviewer": {
@@ -237,6 +241,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #C8A84B 0%, #0F1F0F 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:4",
   },
 
   "nft-appraiser": {
@@ -283,6 +288,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #a855f7 0%, #0F1F0F 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:5",
   },
 
   "tweet-bot": {
@@ -336,6 +342,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #1d9bf0 0%, #0F1F0F 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:6",
   },
 
   "defi-optimizer": {
@@ -389,6 +396,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #C8A84B 0%, #1A2E1A 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:7",
   },
 
   "doc-generator": {
@@ -442,6 +450,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #4ade80 0%, #0F1F0F 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:8",
   },
 
   "wallet-analyst": {
@@ -495,6 +504,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #1A2E1A 0%, #4ade80 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:9",
   },
 
   "news-summarizer": {
@@ -548,6 +558,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #4ade80 0%, #0F1F0F 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:10",
   },
 
   "ens-resolver": {
@@ -601,6 +612,7 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #1A2E1A 0%, #C8A84B 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:11",
   },
 
   "gas-tracker": {
@@ -654,5 +666,6 @@ export const AGENT_DETAILS: Record<string, AgentDetail> = {
       },
     ],
     gradient: "linear-gradient(135deg, #4ade80 0%, #1A2E1A 100%)",
+    erc8004Id: "eip155:8453:0xAc0B3EdC31f653b4A3EF7bB21146C67748128fc7:12",
   },
 };

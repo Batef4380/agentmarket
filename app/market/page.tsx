@@ -251,19 +251,15 @@ function AgentCard({ agent }: { agent: (typeof ALL_AGENTS)[0] }) {
           ))}
         </div>
 
-        {/* Price */}
-        <p
-          style={{
-            fontFamily: "JetBrains Mono, monospace",
-            fontSize: 11,
-            color: "#1A2E1A",
-            letterSpacing: "0.05em",
-            marginBottom: 16,
-            marginTop: "auto",
-          }}
-        >
-          {agent.price} ETH / task
-        </p>
+        {/* ERC-8004 badge + price */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, marginTop: "auto" }}>
+          <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#1A2E1A", letterSpacing: "0.05em" }}>
+            {agent.price} ETH / task
+          </p>
+          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.1em", color: "#4ade80", padding: "2px 6px", border: "1px solid rgba(74,222,128,0.3)", background: "rgba(74,222,128,0.05)" }}>
+            ⬡ ERC-8004
+          </span>
+        </div>
 
         {/* View button */}
         <button

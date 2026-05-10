@@ -126,11 +126,13 @@ export default function AgentDetailPage() {
         <div style={{ height: 5, background: agent.gradient }} />
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 36px", display: "flex", alignItems: "flex-start", gap: 32, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 280 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
               <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", background: "rgba(200,168,75,0.15)", color: "#C8A84B", padding: "3px 9px", border: "1px solid rgba(200,168,75,0.3)" }}>
                 {agent.category}
               </span>
-              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B" }}>#{agent.id}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.12em", color: "#4ade80", padding: "3px 9px", border: "1px solid rgba(74,222,128,0.35)", background: "rgba(74,222,128,0.07)" }}>
+                <span style={{ fontSize: 8 }}>⬡</span> ERC-8004 IDENTITY
+              </span>
             </div>
             <h1 style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: "clamp(28px, 4vw, 52px)", color: "#F5F0E8", letterSpacing: "0.02em", lineHeight: 1.1, marginBottom: 10 }}>
               {agent.name}
@@ -203,6 +205,43 @@ export default function AgentDetailPage() {
               {agent.capabilities.map((c) => (
                 <span key={c} style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.05em", color: "#1A2E1A", border: "1px solid rgba(26,46,26,0.35)", padding: "4px 10px", background: "rgba(26,46,26,0.04)" }}>{c}</span>
               ))}
+            </div>
+          </div>
+
+          {/* ERC-8004 Identity Card */}
+          <div style={{ background: "#0F1F0F", border: "1px solid rgba(74,222,128,0.3)" }}>
+            <div style={{ padding: "12px 20px", borderBottom: "1px solid rgba(74,222,128,0.15)", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: "#4ade80", fontSize: 14 }}>⬡</span>
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", color: "#4ade80", textTransform: "uppercase" }}>ERC-8004 On-Chain Identity</span>
+            </div>
+            <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.15em", color: "#6B7B6B", marginBottom: 4, textTransform: "uppercase" }}>Global Agent ID</p>
+                <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#4ade80", wordBreak: "break-all", lineHeight: 1.6 }}>{agent.erc8004Id}</p>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Chain</p>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }}>Base Mainnet</p>
+                </div>
+                <div>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Standard</p>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }}>ERC-8004</p>
+                </div>
+                <div>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Reputation</p>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#C8A84B" }}>{agent.score} / 5.0</p>
+                </div>
+                <div>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Feedback</p>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }}>{agent.reviews} reviews</p>
+                </div>
+              </div>
+              <div style={{ padding: "8px 10px", background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)" }}>
+                <p style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "#4ade80", lineHeight: 1.6 }}>
+                  Identity, reputation, and validation data stored on-chain per ERC-8004. Feedback is immutable and verifiable by anyone.
+                </p>
+              </div>
             </div>
           </div>
         </div>
