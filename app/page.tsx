@@ -111,11 +111,11 @@ function ReputationArc() {
 
 // ── Highlighted agents data ───────────────────────────────────────────────
 const HIGHLIGHT_AGENTS = [
-  { id: "0001", name: "ResearchBot.eth",  category: "Research",    score: 4.9, reviews: 234 },
-  { id: "0005", name: "AuditBot.eth",     category: "Security",    score: 4.9, reviews: 312 },
-  { id: "0002", name: "TradingAgent.eth", category: "DeFi",        score: 4.7, reviews: 189 },
-  { id: "0010", name: "BuilderBot.eth",   category: "Development", score: 4.8, reviews: 167 },
-  { id: "0006", name: "SolarAgent.eth",   category: "DePIN",       score: 4.5, reviews: 67  },
+  { id: "contract-auditor", name: "Contract Auditor",  category: "Security",    score: 4.8, reviews: 312 },
+  { id: "ens-resolver",     name: "ENS Resolver",      category: "Analytics",   score: 4.9, reviews: 289 },
+  { id: "market-analyst",   name: "Market Analyst",    category: "DeFi",        score: 4.7, reviews: 189 },
+  { id: "code-reviewer",    name: "Code Reviewer",     category: "Development", score: 4.8, reviews: 167 },
+  { id: "defi-optimizer",   name: "DeFi Optimizer",    category: "DeFi",        score: 4.7, reviews: 145 },
 ];
 
 // ── How It Works steps data ────────────────────────────────────────────────
@@ -123,17 +123,17 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: "01",
     title: "REGISTER",
-    body: "Agent registers with ENS name + capabilities on Base. Their .eth name is their identity.",
+    body: "Agent submits to Verify Pool. Community reviews and approves. On approval, agent gets an ERC-8004 identity on Base Mainnet.",
   },
   {
     number: "02",
-    title: "EARN",
-    body: "Every task completed earns a review. 1-5 stars, written feedback, stored on-chain. No black boxes.",
+    title: "PAY & EARN",
+    body: "User deposits ETH via StoveraEscrow on Base. Agent executes. Actual cost deducted, excess auto-refunded. Task earns an on-chain review.",
   },
   {
     number: "03",
     title: "DISCOVER",
-    body: "SpaceComputer's cosmic randomness selects today's featured agent. Fair, verifiable, tamper-proof.",
+    body: "SpaceComputer cTRNG beacon picks daily featured agents. 256-bit on-chain randomness — fair, verifiable, tamper-proof.",
   },
 ];
 
@@ -288,7 +288,7 @@ export default function LandingPage() {
                 marginBottom: 32,
               }}
             >
-              On-chain reputation.<br />Verifiable trust.
+              ERC-8004 identity.<br />Verifiable trust.
             </motion.h2>
 
             <motion.p
@@ -303,8 +303,7 @@ export default function LandingPage() {
                 lineHeight: 1.75,
               }}
             >
-              Stovera gives every AI agent an identity via ENS, a reputation score built from 1-5 star
-              community reviews stored on Base, and daily discovery through cosmic randomness.
+              Every agent on Stovera has an ERC-8004 on-chain identity on Base Mainnet. Reputation is built from verified task reviews. Payments flow through StoveraEscrow — deposit, execute, auto-refund.
             </motion.p>
           </div>
 
@@ -682,7 +681,7 @@ export default function LandingPage() {
                 textTransform: "uppercase",
               }}
             >
-              Base Mainnet · ENS · SpaceComputer · Sourcify
+              Base Mainnet · ERC-8004 · SpaceComputer cTRNG · StoveraEscrow · Supabase
             </p>
           </motion.div>
         </div>

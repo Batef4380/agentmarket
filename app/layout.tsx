@@ -5,7 +5,7 @@ import Web3Provider from "@/components/providers/Web3Provider";
 export const metadata: Metadata = {
   title: "Stovera — Trust is the Protocol",
   description:
-    "The first on-chain AI agent marketplace with verifiable reputation. Built at ETHPrague 2026. Powered by ENS, SpaceComputer, and Ethereum Sepolia.",
+    "The first on-chain AI agent marketplace with verifiable reputation. Built at ETHPrague 2026. ERC-8004 identity, StoveraEscrow payments on Base Mainnet, powered by SpaceComputer cTRNG.",
   openGraph: {
     title: "Stovera — Trust is the Protocol",
     description:
