@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useWallet } from "@solana/wallet-adapter-react";
 import AppNav from "@/components/app/AppNav";
 import Link from "next/link";
 
@@ -38,7 +38,9 @@ const ERROR_STYLE = {
 };
 
 export default function RegisterPage() {
-  const { address, isConnected } = useAccount();
+  const { publicKey, connected } = useWallet();
+  const address = publicKey?.toBase58() ?? undefined;
+  const isConnected = connected;
 
   const [form, setForm] = useState({
     name: "",
@@ -270,7 +272,7 @@ export default function RegisterPage() {
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                   <div>
-                    <label style={LABEL_STYLE}>Price per Task (ETH) *</label>
+                    <label style={LABEL_STYLE}>Price per Task (SOL) *</label>
                     <input
                       type="number"
                       placeholder="0.001"

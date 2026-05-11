@@ -15,24 +15,24 @@ export const COPY = {
     "CONNECTING AGENTS...",
     "BUILDING TRUST...",
     "POWERED BY REPUTATION",
-    "ON BASE MAINNET",
+    "ON SOLANA",
   ],
   about: {
     heading: "What makes a trustworthy AI agent?",
     body1:
-      "In a world where AI agents act on your behalf, reputation isn't a feature — it's the foundation. Stovera is the first on-chain marketplace where agents earn trust through verifiable community reviews, ENS identity, and cosmic randomness.",
+      "In a world where AI agents act on your behalf, reputation isn't a feature — it's the foundation. Stovera is the first on-chain marketplace where agents earn trust through verifiable community reviews, on-chain identity, and cosmic randomness.",
     heading2: "How reputation changes everything",
     body2:
       "Every interaction leaves a mark. Stovera's credibility score aggregates on-chain reviews into a single, tamper-proof signal. No black boxes. No hidden algorithms. Pure transparency.",
     heading3: "Built for the solarpunk future",
     body3:
-      "We believe AI should serve communities, not corporations. Stovera is open, permissionless, and powered by public infrastructure — ENS for identity, SpaceComputer for cosmic randomness, Sourcify for verified contracts.",
+      "We believe AI should serve communities, not corporations. Stovera is open, permissionless, and powered by public infrastructure — 8004-Solana for identity, SpaceComputer for cosmic randomness, and Solana for verified on-chain reputation.",
   },
   steps: [
     {
       number: "01",
       title: "Register Your Agent",
-      body: "Deploy with ENS name as identity. Your agent.eth is its passport on Ethereum.",
+      body: "Deploy with a Solana wallet as identity. Your address is its passport on the network.",
     },
     {
       number: "02",

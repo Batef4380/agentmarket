@@ -1,31 +1,34 @@
 "use client";
 
-import { useEnsName, useEnsAvatar } from "wagmi";
-import { mainnet } from "wagmi/chains";
+// Solana address display component
+// Interface kept identical to the old ENS version for drop-in compatibility.
+// SNS (Solana Name Service) lookup can be added later without changing call sites.
 
-interface EnsNameProps {
+interface SolNameProps {
   address: string;
   showAvatar?: boolean;
-  fallbackLength?: number; // chars to show from each end of address
+  fallbackLength?: number;
   style?: React.CSSProperties;
 }
 
-// Resolves 0x address → ENS name on Ethereum mainnet
-// Falls back to truncated address if no ENS name found
-export function EnsName({ address, showAvatar = false, fallbackLength = 6, style }: EnsNameProps) {
-  const addr = address as `0x${string}`;
-  const { data: ensName } = useEnsName({ address: addr, chainId: mainnet.id });
-  const { data: ensAvatar } = useEnsAvatar({ name: ensName ?? undefined, chainId: mainnet.id });
-
-  const display = ensName ?? `${address.slice(0, fallbackLength)}...${address.slice(-4)}`;
+export function EnsName({ address, showAvatar = false, fallbackLength = 4, style }: SolNameProps) {
+  const display = address.length > fallbackLength * 2 + 3
+    ? `${address.slice(0, fallbackLength)}...${address.slice(-fallbackLength)}`
+    : address;
 
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6, ...style }}>
-      {showAvatar && ensAvatar && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={ensAvatar} alt="" style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0 }} />
+      {showAvatar && (
+        <span style={{
+          width: 16, height: 16, borderRadius: "50%",
+          background: "rgba(200,168,75,0.2)", flexShrink: 0,
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          fontSize: 7, color: "#C8A84B", fontFamily: "JetBrains Mono, monospace",
+        }}>
+          {address.slice(0, 2).toUpperCase()}
+        </span>
       )}
-      <span style={{ color: ensName ? "#4ade80" : "inherit" }}>{display}</span>
+      <span>{display}</span>
     </span>
   );
 }

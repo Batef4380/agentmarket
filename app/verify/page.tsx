@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useWallet } from "@solana/wallet-adapter-react";
 import AppNav from "@/components/app/AppNav";
 import { EnsName } from "@/components/app/EnsName";
 import Link from "next/link";
@@ -94,7 +94,9 @@ function timeAgo(iso: string) {
 }
 
 export default function VerifyPoolPage() {
-  const { address, isConnected } = useAccount();
+  const { publicKey, connected } = useWallet();
+  const address = publicKey?.toBase58() ?? null;
+  const isConnected = connected;
   const [pool, setPool] = useState<PoolAgent[]>([]);
   const [filter, setFilter] = useState<"pending" | "verified" | "rejected" | "all">("pending");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -116,14 +118,14 @@ export default function VerifyPoolPage() {
     setPool((prev) =>
       prev.map((a) =>
         a.id === id
-          ? { ...a, status, verifiedBy: address, verifiedAt: new Date().toISOString() }
+          ? { ...a, status, verifiedBy: address ?? undefined, verifiedAt: new Date().toISOString() }
           : a
       )
     );
     // Persist user-submitted ones back
     const stored: PoolAgent[] = JSON.parse(localStorage.getItem("stovera_pool") || "[]");
     const updated = stored.map((a) =>
-      a.id === id ? { ...a, status, verifiedBy: address, verifiedAt: new Date().toISOString() } : a
+      a.id === id ? { ...a, status, verifiedBy: address ?? undefined, verifiedAt: new Date().toISOString() } : a
     );
     localStorage.setItem("stovera_pool", JSON.stringify(updated));
   };
@@ -303,7 +305,7 @@ export default function VerifyPoolPage() {
                           )}
                         </div>
                         <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-                          by <EnsName address={agent.submittedBy} showAvatar style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10 }} /> · {timeAgo(agent.submittedAt)} · {agent.price} ETH/task
+                          by <EnsName address={agent.submittedBy} showAvatar style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10 }} /> · {timeAgo(agent.submittedAt)} · {agent.price} SOL/task
                         </p>
                       </div>
                     </div>

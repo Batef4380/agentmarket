@@ -1,39 +1,41 @@
 "use client";
 
-import { WagmiProvider, createConfig, http } from "wagmi";
-import { base, mainnet } from "wagmi/chains";
-import { metaMask, coinbaseWallet, walletConnect } from "wagmi/connectors";
+import { useMemo } from "react";
+import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import {
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+  CoinbaseWalletAdapter,
+} from "@solana/wallet-adapter-wallets";
+import { clusterApiUrl } from "@solana/web3.js";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
 
 const queryClient = new QueryClient();
 
-function buildConfig() {
-  const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? "";
-  const validProjectId = projectId && projectId !== "your_project_id_here" ? projectId : "";
-
-  return createConfig({
-    chains: [base, mainnet],
-    connectors: [
-      metaMask(),
-      coinbaseWallet({ appName: "Stovera" }),
-      ...(validProjectId ? [walletConnect({ projectId: validProjectId })] : []),
-    ],
-    transports: {
-      [base.id]: http(),
-      [mainnet.id]: http("https://eth.llamarpc.com"), // ENS resolution (read-only)
-    },
-  });
-}
+const RPC_URL =
+  process.env.NEXT_PUBLIC_SOLANA_RPC_URL ??
+  clusterApiUrl((process.env.NEXT_PUBLIC_SOLANA_CLUSTER as "devnet" | "mainnet-beta") ?? "mainnet-beta");
 
 export default function Web3Provider({ children }: { children: React.ReactNode }) {
-  const [config] = useState(() => buildConfig());
+  const wallets = useMemo(
+    () => [
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter(),
+      new CoinbaseWalletAdapter(),
+    ],
+    []
+  );
 
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </WagmiProvider>
+    <ConnectionProvider endpoint={RPC_URL}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
   );
 }

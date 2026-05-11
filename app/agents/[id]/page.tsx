@@ -1,104 +1,105 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
-import { parseEther, keccak256, toBytes, formatEther } from "viem";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { SystemProgram, Transaction, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import AppNav from "@/components/app/AppNav";
 import { EnsName } from "@/components/app/EnsName";
 import { AGENT_DETAILS, type AgentTaskExample } from "@/lib/agentDetails";
-import { STOVERA_ESCROW_ADDRESS, STOVERA_ESCROW_ABI, DEFAULT_OPERATOR, TaskStatus } from "@/lib/contracts";
+import { DEFAULT_OPERATOR, parseSol, formatSol } from "@/lib/contracts";
 
 const STARS = (score: number) =>
   [1, 2, 3, 4, 5].map((i) => (
     <span key={i} style={{ color: i <= Math.round(score) ? "#C8A84B" : "rgba(200,168,75,0.2)", fontSize: 14 }}>★</span>
   ));
 
-function fmtEth(val: string) {
+function fmtSol(val: string) {
   const n = parseFloat(val);
-  if (n === 0) return "0 ETH";
-  return n.toFixed(5).replace(/0+$/, "").replace(/\.$/, "") + " ETH";
+  if (n === 0) return "0 SOL";
+  return n.toFixed(4).replace(/0+$/, "").replace(/\.$/, "") + " SOL";
 }
 
-// Generate a deterministic task ID from timestamp + agent + wallet
-function generateTaskId(agentId: string, userAddress: string): `0x${string}` {
+// Generate a deterministic task ID from sha256 of agent + address + timestamp
+async function generateTaskId(agentId: string, userAddress: string): Promise<string> {
   const raw = `${agentId}-${userAddress}-${Date.now()}`;
-  return keccak256(toBytes(raw));
+  const encoded = Buffer.from(raw);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", encoded);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export default function AgentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { address, isConnected } = useAccount();
+  const { publicKey, sendTransaction, connected } = useWallet();
+  const { connection } = useConnection();
+  const address = publicKey?.toBase58() ?? null;
+  const isConnected = connected;
+
   const agent = AGENT_DETAILS[id as string];
 
   const [selectedTask, setSelectedTask] = useState<AgentTaskExample | null>(null);
-  const [taskId, setTaskId] = useState<`0x${string}` | null>(null);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [txSig, setTxSig] = useState<string | null>(null);
   const [step, setStep] = useState<"idle" | "confirm" | "pending" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const depositAmount = selectedTask
-    ? parseEther((parseFloat(selectedTask.estimateHigh) * agent?.depositMultiplier || 1).toFixed(6) as `${number}`)
-    : undefined;
+  const depositLamports = selectedTask && agent
+    ? parseSol((parseFloat(selectedTask.estimateHigh) * agent.depositMultiplier).toFixed(9))
+    : null;
 
-  // Write contract hook
-  const { writeContract, data: txHash, isPending: isWriting, error: writeError } = useWriteContract();
+  const refundEstimate = selectedTask && depositLamports
+    ? formatSol(depositLamports - parseSol(selectedTask.estimateLow))
+    : null;
 
-  // Wait for transaction
-  const { isLoading: isConfirming, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
+  const handleDeposit = useCallback(async () => {
+    if (!publicKey || !selectedTask || !depositLamports || !agent) return;
+    setStep("pending");
+    setErrorMsg("");
 
-  // Read task status from chain (after deposit)
-  const { data: onChainTask } = useReadContract({
-    address: STOVERA_ESCROW_ADDRESS,
-    abi: STOVERA_ESCROW_ABI,
-    functionName: "getTask",
-    args: taskId ? [taskId] : undefined,
-    query: { enabled: !!taskId && step === "success" },
-  });
+    try {
+      const tid = await generateTaskId(agent.id, publicKey.toBase58());
+      setTaskId(tid);
 
-  useEffect(() => {
-    if (isTxSuccess && taskId && selectedTask && address && agent) {
+      // Transfer SOL to operator as deposit (placeholder until Anchor IDL is deployed)
+      const tx = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: DEFAULT_OPERATOR,
+          lamports: Number(depositLamports),
+        })
+      );
+
+      const sig = await sendTransaction(tx, connection);
+      setTxSig(sig);
+
+      // Confirm transaction
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight });
+
       setStep("success");
+
       // Persist to Supabase
       fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          taskIdBytes32: taskId,
+          taskIdBytes32: `0x${tid}`,
           agentId: agent.id,
-          userAddress: address,
-          operatorAddress: DEFAULT_OPERATOR,
-          depositEth: formatEther(depositAmount ?? 0n),
-          txHashDeposit: txHash ?? null,
+          userAddress: publicKey.toBase58(),
+          operatorAddress: DEFAULT_OPERATOR.toBase58(),
+          depositEth: formatSol(depositLamports),
+          txHashDeposit: sig,
         }),
       }).catch((e) => console.error("Failed to save task to DB:", e));
-    }
-  }, [isTxSuccess]);
-
-  useEffect(() => {
-    if (writeError) {
-      setErrorMsg(writeError.message.slice(0, 100));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message.slice(0, 120) : "Transaction failed";
+      setErrorMsg(msg);
       setStep("error");
     }
-  }, [writeError]);
-
-  const handleDeposit = () => {
-    if (!address || !selectedTask || !depositAmount) return;
-    const id = generateTaskId(agent.id, address);
-    setTaskId(id);
-    setStep("pending");
-    setErrorMsg("");
-
-    writeContract({
-      address: STOVERA_ESCROW_ADDRESS,
-      abi: STOVERA_ESCROW_ABI,
-      functionName: "depositForTask",
-      args: [id, DEFAULT_OPERATOR],
-      value: depositAmount,
-    });
-  };
+  }, [publicKey, selectedTask, depositLamports, agent, sendTransaction, connection]);
 
   if (!agent) {
     return (
@@ -114,10 +115,6 @@ export default function AgentDetailPage() {
     );
   }
 
-  const refundEstimate = selectedTask && depositAmount
-    ? formatEther(depositAmount - parseEther(selectedTask.estimateLow as `${number}`))
-    : null;
-
   return (
     <div style={{ minHeight: "100vh", background: "#F5F0E8", paddingTop: 60 }}>
       <AppNav />
@@ -132,7 +129,7 @@ export default function AgentDetailPage() {
                 {agent.category}
               </span>
               <span style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.12em", color: "#4ade80", padding: "3px 9px", border: "1px solid rgba(74,222,128,0.35)", background: "rgba(74,222,128,0.07)" }}>
-                <span style={{ fontSize: 8 }}>⬡</span> ERC-8004 IDENTITY
+                <span style={{ fontSize: 8 }}>◎</span> 8004-SOL IDENTITY
               </span>
             </div>
             <h1 style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: "clamp(28px, 4vw, 52px)", color: "#F5F0E8", letterSpacing: "0.02em", lineHeight: 1.1, marginBottom: 10 }}>
@@ -209,11 +206,11 @@ export default function AgentDetailPage() {
             </div>
           </div>
 
-          {/* ERC-8004 Identity Card */}
+          {/* 8004-SOL Identity Card */}
           <div style={{ background: "#0F1F0F", border: "1px solid rgba(74,222,128,0.3)" }}>
             <div style={{ padding: "12px 20px", borderBottom: "1px solid rgba(74,222,128,0.15)", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: "#4ade80", fontSize: 14 }}>⬡</span>
-              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", color: "#4ade80", textTransform: "uppercase" }}>ERC-8004 On-Chain Identity</span>
+              <span style={{ color: "#4ade80", fontSize: 14 }}>◎</span>
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.2em", color: "#4ade80", textTransform: "uppercase" }}>8004-Solana On-Chain Identity</span>
             </div>
             <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
@@ -223,11 +220,11 @@ export default function AgentDetailPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
                   <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Chain</p>
-                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }}>Base Mainnet</p>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }}>Solana Mainnet</p>
                 </div>
                 <div>
                   <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Standard</p>
-                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }}>ERC-8004</p>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }}>8004-Solana</p>
                 </div>
                 <div>
                   <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Reputation</p>
@@ -239,12 +236,12 @@ export default function AgentDetailPage() {
                 </div>
                 <div style={{ gridColumn: "span 2" }}>
                   <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Operator</p>
-                  <EnsName address="0x88E6Da13Ab4699566b7ED412dEce223614eC38C6" showAvatar style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }} />
+                  <EnsName address={DEFAULT_OPERATOR.toBase58()} showAvatar style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }} />
                 </div>
               </div>
               <div style={{ padding: "8px 10px", background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)" }}>
                 <p style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "#4ade80", lineHeight: 1.6 }}>
-                  Identity, reputation, and validation data stored on-chain per ERC-8004. Feedback is immutable and verifiable by anyone.
+                  Identity, reputation, and validation data stored on-chain per 8004-Solana. Feedback is immutable and verifiable by anyone.
                 </p>
               </div>
             </div>
@@ -263,7 +260,7 @@ export default function AgentDetailPage() {
                 return (
                   <button
                     key={i}
-                    onClick={() => { setSelectedTask(task); setStep("idle"); setTaskId(null); }}
+                    onClick={() => { setSelectedTask(task); setStep("idle"); setTaskId(null); setTxSig(null); }}
                     style={{
                       display: "flex", flexDirection: "column", gap: 6,
                       padding: "16px 20px", textAlign: "left",
@@ -282,7 +279,7 @@ export default function AgentDetailPage() {
                     </div>
                     <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: "#6B7B6B", lineHeight: 1.55 }}>{task.description}</p>
                     <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#C8A84B" }}>
-                      ~{fmtEth(task.estimateLow)} – {fmtEth(task.estimateHigh)}
+                      ~{fmtSol(task.estimateLow)} – {fmtSol(task.estimateHigh)}
                     </span>
                   </button>
                 );
@@ -297,20 +294,20 @@ export default function AgentDetailPage() {
               <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
                 <CostRow label="Task" value={selectedTask.name} mono />
                 <CostRow label="Duration" value={selectedTask.duration} />
-                <CostRow label="Min cost" value={`~${fmtEth(selectedTask.estimateLow)}`} />
-                <CostRow label="Max cost" value={`~${fmtEth(selectedTask.estimateHigh)}`} />
+                <CostRow label="Min cost" value={`~${fmtSol(selectedTask.estimateLow)}`} />
+                <CostRow label="Max cost" value={`~${fmtSol(selectedTask.estimateHigh)}`} />
                 <div style={{ height: 1, background: "rgba(200,168,75,0.2)", margin: "4px 0" }} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B", letterSpacing: "0.1em" }}>
                     DEPOSIT ({agent.depositMultiplier}× max)
                   </span>
                   <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 20, color: "#C8A84B" }}>
-                    {depositAmount ? formatEther(depositAmount) : "—"} ETH
+                    {depositLamports ? formatSol(depositLamports) : "—"} SOL
                   </span>
                 </div>
                 <div style={{ padding: "8px 10px", background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.2)" }}>
                   <p style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "#4ade80", lineHeight: 1.6 }}>
-                    ↩ Up to ~{refundEstimate} ETH refunded after task completes (actual cost deducted)
+                    ↩ Up to ~{refundEstimate} SOL refunded after task completes (actual cost deducted)
                   </p>
                 </div>
 
@@ -330,7 +327,7 @@ export default function AgentDetailPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ padding: "10px 12px", background: "rgba(200,168,75,0.08)", border: "1px solid rgba(200,168,75,0.3)" }}>
                       <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: "#C8A84B", lineHeight: 1.7 }}>
-                        Deposit <strong>{depositAmount ? formatEther(depositAmount) : "—"} ETH</strong> on Base Mainnet. Actual cost deducted — remainder refunded automatically.
+                        Deposit <strong>{depositLamports ? formatSol(depositLamports) : "—"} SOL</strong> on Solana. Actual cost deducted — remainder refunded automatically.
                       </p>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -344,13 +341,13 @@ export default function AgentDetailPage() {
                   </div>
                 )}
 
-                {(step === "pending" || isWriting || isConfirming) && (
+                {step === "pending" && (
                   <div style={{ padding: "16px", background: "rgba(200,168,75,0.06)", border: "1px solid rgba(200,168,75,0.3)", textAlign: "center" }}>
                     <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 14, color: "#C8A84B", marginBottom: 6 }}>
-                      {isWriting ? "CONFIRM IN WALLET..." : "CONFIRMING ON CHAIN..."}
+                      {txSig ? "CONFIRMING ON SOLANA..." : "CONFIRM IN WALLET..."}
                     </p>
                     <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B" }}>
-                      {txHash ? `tx: ${txHash.slice(0, 18)}...` : "Waiting for signature"}
+                      {txSig ? `sig: ${txSig.slice(0, 18)}...` : "Waiting for signature"}
                     </p>
                   </div>
                 )}
@@ -359,17 +356,17 @@ export default function AgentDetailPage() {
                   <div style={{ padding: "16px", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.3)", textAlign: "center" }}>
                     <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, color: "#4ade80", marginBottom: 6 }}>TASK QUEUED ✓</p>
                     <p style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: "#6B7B6B", lineHeight: 1.7, marginBottom: 10 }}>
-                      Deposit confirmed on Base Mainnet.<br />
+                      Deposit confirmed on Solana.<br />
                       Refund sent automatically when task completes.
                     </p>
-                    {txHash && (
+                    {txSig && (
                       <a
-                        href={`https://basescan.org/tx/${txHash}`}
+                        href={`https://solscan.io/tx/${txSig}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C8A84B", letterSpacing: "0.1em" }}
                       >
-                        VIEW ON BASESCAN →
+                        VIEW ON SOLSCAN →
                       </a>
                     )}
                   </div>

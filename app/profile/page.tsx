@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useWallet } from "@solana/wallet-adapter-react";
 import AppNav from "@/components/app/AppNav";
 
 // ── Mock data ──────────────────────────────────────────────────────────────
@@ -39,35 +39,35 @@ const RECENT_ACTIVITY = [
     agent: "ResearchBot.eth",
     action: "TASK COMPLETED",
     actionColor: "#4ade80",
-    cost: "0.002 ETH",
+    cost: "0.002 SOL",
   },
   {
     timestamp: "2026-05-09 · 11:18",
     agent: "AuditBot.eth",
     action: "REVIEW LEFT",
     actionColor: "#C8A84B",
-    cost: "0.000 ETH",
+    cost: "0.000 SOL",
   },
   {
     timestamp: "2026-05-08 · 22:05",
     agent: "DataMiner.eth",
     action: "TASK COMPLETED",
     actionColor: "#4ade80",
-    cost: "0.001 ETH",
+    cost: "0.001 SOL",
   },
   {
     timestamp: "2026-05-08 · 16:44",
     agent: "TradingAgent.eth",
     action: "REVIEW LEFT",
     actionColor: "#C8A84B",
-    cost: "0.000 ETH",
+    cost: "0.000 SOL",
   },
   {
     timestamp: "2026-05-07 · 09:11",
     agent: "SolarAgent.eth",
     action: "TASK COMPLETED",
     actionColor: "#4ade80",
-    cost: "0.003 ETH",
+    cost: "0.003 SOL",
   },
 ];
 
@@ -143,9 +143,9 @@ function StarRating({ score }: { score: number }) {
 }
 
 function AddressAvatar({ address }: { address: string }) {
-  // Deterministic color from address
-  const chars = address.slice(2, 4).toUpperCase();
-  const hue = parseInt(address.slice(2, 6), 16) % 360;
+  // Deterministic color from address (base58-compatible)
+  const chars = address.slice(0, 2).toUpperCase();
+  const hue = address.charCodeAt(0) * 37 + address.charCodeAt(1) * 17 + address.charCodeAt(2) * 7;
   const bg = `hsl(${hue}, 55%, 38%)`;
 
   return (
@@ -614,13 +614,16 @@ const TABS = ["FAVORITES", "RECENT", "MY REVIEWS", "WATCHLIST"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function ProfilePage() {
-  const { address, isConnected } = useAccount();
+  const { publicKey, connected } = useWallet();
+  const address = publicKey?.toBase58() ?? null;
+  const isConnected = connected;
   const [activeTab, setActiveTab] = useState<Tab>("FAVORITES");
   const [copied, setCopied] = useState(false);
 
   const shortAddr = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : null;
+
 
   const handleCopyAddress = () => {
     if (!address) return;
@@ -670,7 +673,7 @@ export default function ProfilePage() {
                 <div style={{ marginBottom: 14 }}>
                   <AddressAvatar address={address} />
                 </div>
-                {/* ENS name */}
+                {/* Address display */}
                 <p
                   style={{
                     fontFamily: "var(--font-anton), Anton, sans-serif",
@@ -679,7 +682,7 @@ export default function ProfilePage() {
                     marginBottom: 8,
                   }}
                 >
-                  anon.eth
+                  {shortAddr}
                 </p>
                 {/* Address row */}
                 <div
@@ -803,7 +806,7 @@ export default function ProfilePage() {
           >
             {[
               { label: "Tasks Completed", value: "23" },
-              { label: "ETH Spent", value: "0.047" },
+              { label: "SOL Spent", value: "0.47" },
               { label: "Reviews Written", value: "18" },
               { label: "Helpful Votes", value: "94" },
             ].map((stat, i, arr) => (

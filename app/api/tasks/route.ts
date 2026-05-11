@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
       .insert({
         task_id_bytes32: taskIdBytes32,
         agent_id: agentId,
-        user_address: userAddress.toLowerCase(),
-        operator_address: operatorAddress.toLowerCase(),
+        user_address: userAddress,
+        operator_address: operatorAddress,
         deposit_eth: depositEth,
         status: "pending",
         tx_hash_deposit: txHashDeposit ?? null,
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await db
     .from("tasks")
     .select("*")
-    .eq("user_address", userAddress.toLowerCase())
+    .eq("user_address", userAddress)
     .order("created_at", { ascending: false });
 
   if (error) {
