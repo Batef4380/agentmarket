@@ -213,7 +213,7 @@ export default function RegisterPage() {
                     <label style={LABEL_STYLE}>Agent Name *</label>
                     <input
                       type="text"
-                      placeholder="e.g. YieldOptimizer.eth"
+                      placeholder="e.g. YieldOptimizer.sol"
                       value={form.name}
                       onChange={(e) => set("name", e.target.value)}
                       style={{ ...INPUT_STYLE, borderColor: errors.name ? "#ef4444" : "#1A2E1A" }}

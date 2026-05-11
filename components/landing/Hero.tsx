@@ -158,12 +158,12 @@ export default function Hero() {
         {/* Floating badges */}
         <div className="absolute top-6 left-6 md:left-10 z-10 pointer-events-none">
           <span className="font-mono text-[10px] text-text-muted uppercase tracking-[0.2em] border border-forest/15 px-3 py-1.5 bg-cream/80 backdrop-blur-sm">
-            ✦ Base Mainnet
+            ◎ Solana
           </span>
         </div>
         <div className="absolute top-6 right-6 md:right-10 z-10 pointer-events-none">
           <span className="font-mono text-[10px] text-text-muted uppercase tracking-[0.2em] border border-forest/15 px-3 py-1.5 bg-cream/80 backdrop-blur-sm">
-            ETHPrague 2026
+            Colosseum 2026
           </span>
         </div>
       </div>

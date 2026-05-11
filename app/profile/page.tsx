@@ -8,25 +8,25 @@ import AppNav from "@/components/app/AppNav";
 
 const FAVORITE_AGENTS = [
   {
-    name: "ResearchBot.eth",
+    name: "ResearchBot.sol",
     category: "Research",
     score: 4.9,
     gradient: "linear-gradient(135deg, #1A2E1A 0%, #2d5a2d 50%, #C8A84B 100%)",
   },
   {
-    name: "AuditBot.eth",
+    name: "AuditBot.sol",
     category: "Security",
     score: 4.9,
     gradient: "linear-gradient(135deg, #0F1F0F 0%, #1a3a2a 50%, #4ade80 100%)",
   },
   {
-    name: "DataMiner.eth",
+    name: "DataMiner.sol",
     category: "Analytics",
     score: 4.8,
     gradient: "linear-gradient(135deg, #1a1a2e 0%, #2e2a1a 50%, #C8A84B 100%)",
   },
   {
-    name: "SolarAgent.eth",
+    name: "SolarAgent.sol",
     category: "DePIN",
     score: 4.9,
     gradient: "linear-gradient(135deg, #2e1a0f 0%, #4a2e10 50%, #f97316 100%)",
@@ -36,35 +36,35 @@ const FAVORITE_AGENTS = [
 const RECENT_ACTIVITY = [
   {
     timestamp: "2026-05-09 · 14:32",
-    agent: "ResearchBot.eth",
+    agent: "ResearchBot.sol",
     action: "TASK COMPLETED",
     actionColor: "#4ade80",
     cost: "0.002 SOL",
   },
   {
     timestamp: "2026-05-09 · 11:18",
-    agent: "AuditBot.eth",
+    agent: "AuditBot.sol",
     action: "REVIEW LEFT",
     actionColor: "#C8A84B",
     cost: "0.000 SOL",
   },
   {
     timestamp: "2026-05-08 · 22:05",
-    agent: "DataMiner.eth",
+    agent: "DataMiner.sol",
     action: "TASK COMPLETED",
     actionColor: "#4ade80",
     cost: "0.001 SOL",
   },
   {
     timestamp: "2026-05-08 · 16:44",
-    agent: "TradingAgent.eth",
+    agent: "TradingAgent.sol",
     action: "REVIEW LEFT",
     actionColor: "#C8A84B",
     cost: "0.000 SOL",
   },
   {
     timestamp: "2026-05-07 · 09:11",
-    agent: "SolarAgent.eth",
+    agent: "SolarAgent.sol",
     action: "TASK COMPLETED",
     actionColor: "#4ade80",
     cost: "0.003 SOL",
@@ -73,7 +73,7 @@ const RECENT_ACTIVITY = [
 
 const MY_REVIEWS = [
   {
-    agent: "AuditBot.eth",
+    agent: "AuditBot.sol",
     category: "Security",
     score: 5,
     text: "Found 3 critical vulnerabilities in our smart contract that manual review missed. Exceptional.",
@@ -81,7 +81,7 @@ const MY_REVIEWS = [
     timestamp: "6h ago",
   },
   {
-    agent: "ResearchBot.eth",
+    agent: "ResearchBot.sol",
     category: "Research",
     score: 5,
     text: "Analyzed 50+ DeFi protocols in minutes. Accuracy was impressive, saved our team days of work.",
@@ -89,7 +89,7 @@ const MY_REVIEWS = [
     timestamp: "2h ago",
   },
   {
-    agent: "DataMiner.eth",
+    agent: "DataMiner.sol",
     category: "Analytics",
     score: 3,
     text: "Decent data extraction but struggled with unstructured sources. Needs improvement for edge cases.",
@@ -100,21 +100,21 @@ const MY_REVIEWS = [
 
 const WATCHLIST_AGENTS = [
   {
-    name: "CodeHelper.eth",
+    name: "CodeHelper.sol",
     category: "Development",
     score: 4.6,
     gradient: "linear-gradient(135deg, #1a2e2e 0%, #1a3a3a 50%, #22d3ee 100%)",
     watching: true,
   },
   {
-    name: "TradingAgent.eth",
+    name: "TradingAgent.sol",
     category: "DeFi",
     score: 4.7,
     gradient: "linear-gradient(135deg, #2e1a1a 0%, #3a2a10 50%, #C8A84B 100%)",
     watching: true,
   },
   {
-    name: "NexusBot.eth",
+    name: "NexusBot.sol",
     category: "Analytics",
     score: 4.5,
     gradient: "linear-gradient(135deg, #1a1a2e 0%, #2a1a3a 50%, #a855f7 100%)",

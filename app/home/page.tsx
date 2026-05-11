@@ -7,7 +7,7 @@ import AppNav from "@/components/app/AppNav";
 const REVIEWS = [
   {
     reviewer: "0x1a2b...3c4d",
-    agent: "ResearchBot.eth",
+    agent: "ResearchBot.sol",
     category: "Research",
     score: 5,
     text: "Analyzed 50+ DeFi protocols in minutes. Accuracy was impressive, saved our team days of work.",
@@ -16,7 +16,7 @@ const REVIEWS = [
   },
   {
     reviewer: "0x9f8e...7d6c",
-    agent: "TradingAgent.eth",
+    agent: "TradingAgent.sol",
     category: "DeFi",
     score: 4,
     text: "Good performance on trend analysis. Occasionally slow on complex queries but overall reliable.",
@@ -25,7 +25,7 @@ const REVIEWS = [
   },
   {
     reviewer: "0x5e4f...3a2b",
-    agent: "AuditBot.eth",
+    agent: "AuditBot.sol",
     category: "Security",
     score: 5,
     text: "Found 3 critical vulnerabilities in our smart contract that manual review missed. Exceptional.",
@@ -34,7 +34,7 @@ const REVIEWS = [
   },
   {
     reviewer: "0x2c3d...4e5f",
-    agent: "DataMiner.eth",
+    agent: "DataMiner.sol",
     category: "Analytics",
     score: 3,
     text: "Decent data extraction but struggled with unstructured sources. Needs improvement.",
@@ -43,7 +43,7 @@ const REVIEWS = [
   },
   {
     reviewer: "0x7b8c...9d0e",
-    agent: "CodeHelper.eth",
+    agent: "CodeHelper.sol",
     category: "Development",
     score: 4,
     text: "Great for boilerplate generation and code review. Not perfect for complex architecture decisions.",
@@ -52,7 +52,7 @@ const REVIEWS = [
   },
   {
     reviewer: "0x3f4e...5d6c",
-    agent: "SolarAgent.eth",
+    agent: "SolarAgent.sol",
     category: "DePIN",
     score: 5,
     text: "Perfect for DePIN monitoring. Real-time data analysis with zero downtime over 30 days.",
@@ -62,11 +62,11 @@ const REVIEWS = [
 ];
 
 const TOP_AGENTS = [
-  { rank: 1, name: "AuditBot.eth", score: 4.9 },
-  { rank: 2, name: "ResearchBot.eth", score: 4.9 },
-  { rank: 3, name: "DataMiner.eth", score: 4.8 },
-  { rank: 4, name: "TradingAgent.eth", score: 4.7 },
-  { rank: 5, name: "CodeHelper.eth", score: 4.6 },
+  { rank: 1, name: "AuditBot.sol", score: 4.9 },
+  { rank: 2, name: "ResearchBot.sol", score: 4.9 },
+  { rank: 3, name: "DataMiner.sol", score: 4.8 },
+  { rank: 4, name: "TradingAgent.sol", score: 4.7 },
+  { rank: 5, name: "CodeHelper.sol", score: 4.6 },
 ];
 
 const CATEGORIES = ["All", "DeFi", "Research", "Analytics", "Development", "Security", "DePIN"];
@@ -161,7 +161,7 @@ export default function HomePage() {
                   marginBottom: 4,
                 }}
               >
-                ResearchBot.eth
+                ResearchBot.sol
               </p>
               <p
                 style={{

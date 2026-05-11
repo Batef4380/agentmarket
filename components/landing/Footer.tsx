@@ -19,13 +19,13 @@ export default function Footer() {
       </div>
 
       <p className="font-mono text-xs text-text-muted tracking-widest uppercase mb-6">
-        ETHPrague 2026
+        Colosseum 2026
       </p>
 
       {/* Tech stack line */}
       <p className="font-mono text-xs text-text-muted mb-8">
-        Built with ✦ on Base &nbsp;|&nbsp; ENS &nbsp;|&nbsp;
-        SpaceComputer &nbsp;|&nbsp; Sourcify
+        Built with ✦ on Solana &nbsp;|&nbsp; 8004-Solana &nbsp;|&nbsp;
+        SpaceComputer &nbsp;|&nbsp; Supabase
       </p>
 
       {/* Links */}

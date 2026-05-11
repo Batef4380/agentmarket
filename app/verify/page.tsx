@@ -25,7 +25,7 @@ interface PoolAgent {
 const MOCK_POOL: PoolAgent[] = [
   {
     id: "mock_001",
-    name: "YieldOptimizer.eth",
+    name: "YieldOptimizer.sol",
     category: "DeFi",
     description: "Automatically optimizes yield farming strategies across multiple protocols by analyzing APY, gas costs, and risk parameters in real-time.",
     endpoint: "https://api.yieldoptimizer.xyz/v1",
@@ -38,7 +38,7 @@ const MOCK_POOL: PoolAgent[] = [
   },
   {
     id: "mock_002",
-    name: "NFTAnalyzer.eth",
+    name: "NFTAnalyzer.sol",
     category: "Analytics",
     description: "Deep NFT collection analytics — floor price tracking, whale wallet monitoring, and rarity score calculations across all major marketplaces.",
     endpoint: "https://api.nftanalyzer.xyz/v1",
@@ -50,7 +50,7 @@ const MOCK_POOL: PoolAgent[] = [
   },
   {
     id: "mock_003",
-    name: "BridgeAgent.eth",
+    name: "BridgeAgent.sol",
     category: "DeFi",
     description: "Cross-chain bridge optimization — finds the cheapest and fastest bridge routes for token transfers across 15+ supported networks.",
     endpoint: "https://api.bridgeagent.xyz/v1",
@@ -62,7 +62,7 @@ const MOCK_POOL: PoolAgent[] = [
   },
   {
     id: "mock_004",
-    name: "GovernanceBot.eth",
+    name: "GovernanceBot.sol",
     category: "Research",
     description: "Monitors and summarizes DAO governance proposals across major protocols. Sends digest reports and voting recommendations based on your portfolio.",
     endpoint: "https://api.govbot.xyz/v1",

@@ -55,12 +55,12 @@ export const STATS = [
 ] as const;
 
 export const AGENTS = [
-  { name: "ResearchBot.eth", category: "Research", score: 4.9, reviews: 234, id: "0001" },
-  { name: "TradingAgent.eth", category: "DeFi", score: 4.7, reviews: 189, id: "0002" },
-  { name: "DataMiner.eth", category: "Analytics", score: 4.8, reviews: 156, id: "0003" },
-  { name: "CodeHelper.eth", category: "Development", score: 4.6, reviews: 98, id: "0004" },
-  { name: "AuditBot.eth", category: "Security", score: 4.9, reviews: 312, id: "0005" },
-  { name: "SolarAgent.eth", category: "DePIN", score: 4.5, reviews: 67, id: "0006" },
+  { name: "ResearchBot.sol", category: "Research", score: 4.9, reviews: 234, id: "0001" },
+  { name: "TradingAgent.sol", category: "DeFi", score: 4.7, reviews: 189, id: "0002" },
+  { name: "DataMiner.sol", category: "Analytics", score: 4.8, reviews: 156, id: "0003" },
+  { name: "CodeHelper.sol", category: "Development", score: 4.6, reviews: 98, id: "0004" },
+  { name: "AuditBot.sol", category: "Security", score: 4.9, reviews: 312, id: "0005" },
+  { name: "SolarAgent.sol", category: "DePIN", score: 4.5, reviews: 67, id: "0006" },
 ] as const;
 
 export const BINARY_TICKER_CONTENT = Array(3)

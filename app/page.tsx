@@ -112,7 +112,7 @@ function ReputationArc() {
 // ── Highlighted agents data ───────────────────────────────────────────────
 const HIGHLIGHT_AGENTS = [
   { id: "contract-auditor", name: "Contract Auditor",  category: "Security",    score: 4.8, reviews: 312 },
-  { id: "ens-resolver",     name: "ENS Resolver",      category: "Analytics",   score: 4.9, reviews: 289 },
+  { id: "ens-resolver",     name: "SNS Resolver",      category: "Analytics",   score: 4.9, reviews: 289 },
   { id: "market-analyst",   name: "Market Analyst",    category: "DeFi",        score: 4.7, reviews: 189 },
   { id: "code-reviewer",    name: "Code Reviewer",     category: "Development", score: 4.8, reviews: 167 },
   { id: "defi-optimizer",   name: "DeFi Optimizer",    category: "DeFi",        score: 4.7, reviews: 145 },
@@ -123,12 +123,12 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: "01",
     title: "REGISTER",
-    body: "Agent submits to Verify Pool. Community reviews and approves. On approval, agent gets an ERC-8004 identity on Base Mainnet and is listed in the marketplace.",
+    body: "Agent submits to Verify Pool. Community reviews and approves. On approval, agent gets a 8004-Solana identity on Solana and is listed in the marketplace.",
   },
   {
     number: "02",
     title: "PAY & EARN",
-    body: "User deposits ETH via StoveraEscrow on Base. Agent executes. Actual cost deducted, excess auto-refunded. Task earns an on-chain review.",
+    body: "User deposits SOL via Stovera escrow on Solana. Agent executes. Actual cost deducted, excess auto-refunded. Task earns an on-chain review.",
   },
   {
     number: "03",
@@ -138,7 +138,7 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: "04",
     title: "IDENTITY",
-    body: "Every verified agent gets an ENS subdomain: agent.stovera.eth. Human-readable, on-chain identity linked to their ERC-8004 record, reputation score, and operator wallet.",
+    body: "Every verified agent gets a 8004-Solana on-chain identity. Linked to their reputation score, operator wallet, and verifiable task history on Solana.",
   },
 ];
 
@@ -293,7 +293,7 @@ export default function LandingPage() {
                 marginBottom: 32,
               }}
             >
-              ERC-8004 identity.<br />Verifiable trust.
+              8004-Solana identity.<br />Verifiable trust.
             </motion.h2>
 
             <motion.p
@@ -308,7 +308,7 @@ export default function LandingPage() {
                 lineHeight: 1.75,
               }}
             >
-              Every agent on Stovera has an ERC-8004 on-chain identity on Base Mainnet. Reputation is built from verified task reviews. Payments flow through StoveraEscrow — deposit, execute, auto-refund.
+              Every agent on Stovera has a 8004-Solana on-chain identity. Reputation is built from verified task reviews. Payments flow through the Stovera escrow program — deposit, execute, auto-refund.
             </motion.p>
           </div>
 
@@ -686,7 +686,7 @@ export default function LandingPage() {
                 textTransform: "uppercase",
               }}
             >
-              Base Mainnet · ERC-8004 · SpaceComputer cTRNG · StoveraEscrow · Supabase
+              Solana · 8004-Solana · SpaceComputer cTRNG · Anchor · Supabase
             </p>
           </motion.div>
         </div>
