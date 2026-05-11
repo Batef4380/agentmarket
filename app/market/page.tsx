@@ -301,6 +301,14 @@ export default function MarketPage() {
     signature: string | null;
     via: string;
   } | null>(null);
+  const [solanaPicks, setSolanaPicks] = useState<typeof ALL_AGENTS | null>(null);
+  const [solanaMeta, setSolanaMeta] = useState<{
+    blockhash: string | null;
+    slot: number | null;
+    rpc: string;
+    solscanUrl: string | null;
+    timestamp: string;
+  } | null>(null);
 
   useEffect(() => {
     const pool = JSON.parse(localStorage.getItem("stovera_pool") || "[]");
@@ -363,6 +371,43 @@ export default function MarketPage() {
       });
     }
     fetchCosmicRandom();
+  }, []);
+
+  useEffect(() => {
+    async function fetchSolanaEntropy() {
+      try {
+        const res = await fetch("/api/random/solana", { signal: AbortSignal.timeout(8000) });
+        if (!res.ok) return;
+        const json = await res.json();
+
+        const pool = ALL_AGENTS;
+        const seen = new Set<string>();
+        const picks: typeof ALL_AGENTS = [];
+
+        for (const hex of (json.entropy as string[])) {
+          const idx = parseInt(hex.slice(0, 8), 16) % pool.length;
+          const agent = pool[idx];
+          if (!seen.has(agent.id)) { seen.add(agent.id); picks.push(agent); }
+          if (picks.length === 3) break;
+        }
+        for (const a of pool) {
+          if (picks.length >= 3) break;
+          if (!seen.has(a.id)) { seen.add(a.id); picks.push(a); }
+        }
+
+        setSolanaPicks(picks.slice(0, 3));
+        setSolanaMeta({
+          blockhash: json.blockhash ?? null,
+          slot: json.slot ?? null,
+          rpc: json.rpc ?? "mainnet-beta",
+          solscanUrl: json.solscanUrl ?? null,
+          timestamp: json.timestamp,
+        });
+      } catch {
+        // silently ignore
+      }
+    }
+    fetchSolanaEntropy();
   }, []);
 
   const allAgents = [...ALL_AGENTS, ...verifiedAgents];
@@ -650,6 +695,144 @@ export default function MarketPage() {
                         {agent.price} SOL / task
                       </span>
                       <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C8A84B", letterSpacing: "0.1em" }}>
+                        VIEW →
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Solana Entropy Picks ───────────────────────────────────────── */}
+      {solanaPicks && (
+        <div style={{
+          background: "#0a0a1a",
+          backgroundImage: "linear-gradient(rgba(153,69,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.04) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+          borderBottom: "1px solid rgba(153,69,255,0.25)",
+          padding: "28px 0",
+        }}>
+          <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 24px" }}>
+            {/* Header row */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <span style={{ fontSize: 20 }}>◎</span>
+                <div>
+                  <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 18, color: "#F5F0E8", letterSpacing: "0.1em" }}>
+                    SOLANA ENTROPY PICKS
+                  </p>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B", letterSpacing: "0.15em", marginTop: 2 }}>
+                    SELECTED VIA ON-CHAIN SOLANA BLOCKHASH
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    background: solanaMeta?.slot ? "rgba(153,69,255,0.12)" : "rgba(107,123,107,0.1)",
+                    border: solanaMeta?.slot ? "1px solid rgba(153,69,255,0.4)" : "1px solid rgba(107,123,107,0.3)",
+                    padding: "5px 10px",
+                  }}>
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: solanaMeta?.slot ? "#9945FF" : "#6B7B6B" }} />
+                    <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: solanaMeta?.slot ? "#9945FF" : "#6B7B6B", letterSpacing: "0.1em" }}>
+                      {solanaMeta?.slot ? `SLOT #${solanaMeta.slot.toLocaleString()} · LIVE` : "FALLBACK"}
+                    </span>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.1em" }}>NETWORK</p>
+                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#9945FF", letterSpacing: "0.05em" }}>
+                      {solanaMeta?.rpc ?? "mainnet-beta"}
+                    </p>
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                  {solanaMeta?.blockhash && (
+                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.05em" }}>
+                      blockhash: <span style={{ color: "rgba(153,69,255,0.7)" }}>{solanaMeta.blockhash.slice(0, 16)}...</span>
+                    </p>
+                  )}
+                  {solanaMeta?.solscanUrl && (
+                    <a
+                      href={solanaMeta.solscanUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "rgba(153,69,255,0.6)", letterSpacing: "0.05em", textDecoration: "none" }}
+                    >
+                      VERIFY ON SOLSCAN →
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 3 agent cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+              {solanaPicks.map((agent, i) => (
+                <div
+                  key={agent.id}
+                  onClick={() => router.push(`/agents/${agent.id}`)}
+                  style={{
+                    background: "#0f0f20",
+                    border: "1px solid rgba(153,69,255,0.3)",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    transition: "border-color 0.2s, transform 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "#9945FF";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(153,69,255,0.3)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+                  }}
+                >
+                  <div style={{ height: 6, background: i === 0 ? "#9945FF" : i === 1 ? "#14F195" : "rgba(153,69,255,0.5)" }} />
+                  <div style={{ padding: "16px 18px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                      <span style={{
+                        fontFamily: "JetBrains Mono, monospace", fontSize: 8,
+                        letterSpacing: "0.2em", textTransform: "uppercase",
+                        background: "rgba(153,69,255,0.15)", color: "#9945FF",
+                        padding: "2px 7px",
+                      }}>
+                        {agent.category}
+                      </span>
+                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "rgba(153,69,255,0.5)", letterSpacing: "0.1em" }}>
+                        #{i + 1} PICK
+                      </span>
+                    </div>
+                    <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 17, color: "#F5F0E8", marginBottom: 8, lineHeight: 1.2 }}>
+                      {agent.name}
+                    </p>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10 }}>
+                      <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 22, color: "#14F195", lineHeight: 1 }}>
+                        {agent.score} ★
+                      </span>
+                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B" }}>
+                        ({agent.reviews} reviews)
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
+                      {agent.capabilities.slice(0, 2).map((c) => (
+                        <span key={c} style={{
+                          fontFamily: "JetBrains Mono, monospace", fontSize: 8,
+                          color: "#6B7B6B", border: "1px solid rgba(153,69,255,0.2)", padding: "2px 6px",
+                        }}>{c}</span>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid rgba(153,69,255,0.15)", paddingTop: 10 }}>
+                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B" }}>
+                        {agent.price} SOL / task
+                      </span>
+                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#9945FF", letterSpacing: "0.1em" }}>
                         VIEW →
                       </span>
                     </div>
