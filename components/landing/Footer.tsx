@@ -24,8 +24,7 @@ export default function Footer() {
 
       {/* Tech stack line */}
       <p className="font-mono text-xs text-text-muted mb-8">
-        Built with ✦ on Solana &nbsp;|&nbsp; 8004-Solana &nbsp;|&nbsp;
-        SpaceComputer &nbsp;|&nbsp; Supabase
+        Built with ✦ on Solana &nbsp;|&nbsp; 8004-Solana &nbsp;|&nbsp; Supabase
       </p>
 
       {/* Links */}

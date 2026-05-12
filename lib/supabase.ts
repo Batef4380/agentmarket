@@ -26,8 +26,8 @@ export type TaskRow = {
   agent_id: string;
   user_address: string;
   operator_address: string;
-  deposit_eth: string;
-  actual_cost_eth: string | null;
+  deposit_sol: string;
+  actual_cost_sol: string | null;
   status: "pending" | "executing" | "completed" | "cancelled";
   tx_hash_deposit: string | null;
   tx_hash_complete: string | null;

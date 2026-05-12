@@ -10,11 +10,11 @@ export async function POST(req: NextRequest) {
       agentId,
       userAddress,
       operatorAddress,
-      depositEth,
+      depositSol,
       txHashDeposit,
     } = body;
 
-    if (!taskIdBytes32 || !agentId || !userAddress || !operatorAddress || !depositEth) {
+    if (!taskIdBytes32 || !agentId || !userAddress || !operatorAddress || !depositSol) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         agent_id: agentId,
         user_address: userAddress,
         operator_address: operatorAddress,
-        deposit_eth: depositEth,
+        deposit_sol: depositSol,
         status: "pending",
         tx_hash_deposit: txHashDeposit ?? null,
       })

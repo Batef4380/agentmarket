@@ -133,7 +133,7 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: "03",
     title: "DISCOVER",
-    body: "SpaceComputer cTRNG beacon picks daily featured agents. 256-bit on-chain randomness — fair, verifiable, tamper-proof.",
+    body: "Solana blockhash entropy picks daily featured agents. On-chain randomness — fair, verifiable, tamper-proof.",
   },
   {
     number: "04",
@@ -153,6 +153,7 @@ export default function LandingPage() {
 
       {/* ── SECTION 2: THE PROBLEM ────────────────────────────────────── */}
       <section
+        id="about"
         className="grid-bg"
         style={{ background: "#F5F0E8", padding: "120px 40px", position: "relative", overflow: "hidden" }}
       >
@@ -326,6 +327,7 @@ export default function LandingPage() {
 
       {/* ── SECTION 4: HOW IT WORKS ───────────────────────────────────── */}
       <section
+        id="features"
         className="grid-bg"
         style={{ background: "#F5F0E8", padding: "120px 40px", position: "relative", overflow: "hidden" }}
       >
@@ -410,6 +412,7 @@ export default function LandingPage() {
 
       {/* ── SECTION 5: TODAY'S HIGHLIGHTED AGENTS ────────────────────── */}
       <section
+        id="agents"
         style={{
           background: "#1A2E1A",
           backgroundImage: "linear-gradient(rgba(200,168,75,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(200,168,75,0.04) 1px, transparent 1px)",
@@ -456,7 +459,7 @@ export default function LandingPage() {
                 marginBottom: 14,
               }}
             >
-              Selected by cosmic randomness via SpaceComputer cTRNG
+              Selected via on-chain Solana blockhash entropy
             </motion.p>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
@@ -618,6 +621,7 @@ export default function LandingPage() {
 
       {/* ── SECTION 6: ENTER THE APP ──────────────────────────────────── */}
       <section
+        id="contact"
         className="grid-bg"
         style={{ background: "#F5F0E8", padding: "140px 40px", textAlign: "center" }}
       >
@@ -686,7 +690,7 @@ export default function LandingPage() {
                 textTransform: "uppercase",
               }}
             >
-              Solana · 8004-Solana · SpaceComputer cTRNG · Anchor · Supabase
+              Solana · 8004-Solana · Anchor · Supabase
             </p>
           </motion.div>
         </div>

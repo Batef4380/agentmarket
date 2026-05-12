@@ -27,7 +27,7 @@ export async function PATCH(
 ) {
   try {
     const body = await req.json();
-    const { status, actualCostEth, txHashComplete } = body;
+    const { status, actualCostSol, txHashComplete } = body;
 
     // Validate secret header to prevent unauthorized status changes
     const authHeader = req.headers.get("x-operator-secret");
@@ -37,7 +37,7 @@ export async function PATCH(
 
     const db = createServerClient();
     const update: Record<string, unknown> = { status };
-    if (actualCostEth !== undefined) update.actual_cost_eth = actualCostEth;
+    if (actualCostSol !== undefined) update.actual_cost_sol = actualCostSol;
     if (txHashComplete) update.tx_hash_complete = txHashComplete;
     if (status === "completed" || status === "cancelled") {
       update.completed_at = new Date().toISOString();

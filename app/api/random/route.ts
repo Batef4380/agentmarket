@@ -14,7 +14,7 @@ async function getRandom(sdk: AnySDK) {
 }
 
 export async function GET() {
-  // Priority 1: Authenticated Orbitport API (real satellite cTRNG)
+  // Priority 1: Authenticated Orbitport API (real satellite random)
   if (CLIENT_ID && CLIENT_SECRET) {
     try {
       const sdk = createOrbitportSDK({
@@ -38,7 +38,7 @@ export async function GET() {
         });
       }
     } catch (e) {
-      console.log("[cTRNG] Orbitport API error:", (e as Error).message);
+      console.log("[random] Orbitport API error:", (e as Error).message);
     }
   }
 
@@ -60,7 +60,7 @@ export async function GET() {
       });
     }
   } catch (e) {
-    console.log("[cTRNG] IPFS beacon error:", (e as Error).message);
+    console.log("[random] IPFS beacon error:", (e as Error).message);
   }
 
   // Priority 3: Date-seeded deterministic fallback (changes daily)

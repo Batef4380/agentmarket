@@ -55,6 +55,8 @@ interface SolNameProps {
 export function EnsName({ address, showAvatar = false, fallbackLength = 4, style }: SolNameProps) {
   const snsName = useSnsName(address);
 
+  if (!address) return <span style={style}>—</span>;
+
   const shortAddr = address.length > fallbackLength * 2 + 3
     ? `${address.slice(0, fallbackLength)}...${address.slice(-fallbackLength)}`
     : address;

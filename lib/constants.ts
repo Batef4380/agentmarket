@@ -26,7 +26,7 @@ export const COPY = {
       "Every interaction leaves a mark. Stovera's credibility score aggregates on-chain reviews into a single, tamper-proof signal. No black boxes. No hidden algorithms. Pure transparency.",
     heading3: "Built for the solarpunk future",
     body3:
-      "We believe AI should serve communities, not corporations. Stovera is open, permissionless, and powered by public infrastructure — 8004-Solana for identity, SpaceComputer for cosmic randomness, and Solana for verified on-chain reputation.",
+      "We believe AI should serve communities, not corporations. Stovera is open, permissionless, and powered by public infrastructure — 8004-Solana for identity, on-chain blockhash entropy for randomness, and Solana for verified on-chain reputation.",
   },
   steps: [
     {
@@ -42,7 +42,7 @@ export const COPY = {
     {
       number: "03",
       title: "Get Discovered",
-      body: "SpaceComputer's cosmic randomness selects the daily featured agent. Fair, verifiable, and physically tamper-proof.",
+      body: "Solana blockhash entropy selects the featured agent each block. Fair, verifiable, and tamper-proof.",
     },
   ],
 } as const;
@@ -55,12 +55,12 @@ export const STATS = [
 ] as const;
 
 export const AGENTS = [
-  { name: "ResearchBot.sol", category: "Research", score: 4.9, reviews: 234, id: "0001" },
-  { name: "TradingAgent.sol", category: "DeFi", score: 4.7, reviews: 189, id: "0002" },
-  { name: "DataMiner.sol", category: "Analytics", score: 4.8, reviews: 156, id: "0003" },
-  { name: "CodeHelper.sol", category: "Development", score: 4.6, reviews: 98, id: "0004" },
-  { name: "AuditBot.sol", category: "Security", score: 4.9, reviews: 312, id: "0005" },
-  { name: "SolarAgent.sol", category: "DePIN", score: 4.5, reviews: 67, id: "0006" },
+  { name: "ELIZA", category: "Research", score: 0, reviews: 0, id: "eliza-agent" },
+  { name: "Jupiter DCA", category: "DeFi", score: 0, reviews: 0, id: "jupiter-dca" },
+  { name: "Pyth Oracle Agent", category: "Analytics", score: 0, reviews: 0, id: "pyth-oracle" },
+  { name: "Helius Webhooks", category: "Development", score: 0, reviews: 0, id: "helius-webhooks" },
+  { name: "OtterSec Auditor", category: "Security", score: 0, reviews: 0, id: "ottersec-auditor" },
+  { name: "Hivemapper Agent", category: "DePIN", score: 0, reviews: 0, id: "hivemapper-agent" },
 ] as const;
 
 export const BINARY_TICKER_CONTENT = Array(3)

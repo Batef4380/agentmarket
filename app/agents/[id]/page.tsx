@@ -4,11 +4,39 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
-import { SystemProgram, Transaction, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { SystemProgram, Transaction, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import AppNav from "@/components/app/AppNav";
 import { EnsName } from "@/components/app/EnsName";
+import ReviewModal from "@/components/app/ReviewModal";
 import { AGENT_DETAILS, type AgentTaskExample } from "@/lib/agentDetails";
-import { DEFAULT_OPERATOR, parseSol, formatSol } from "@/lib/contracts";
+import { DEFAULT_OPERATOR, STOVERA_ESCROW_PROGRAM_ID, STATE_SEED, TASK_SEED, parseSol, formatSol } from "@/lib/contracts";
+
+const AGENT_SEED = Buffer.from("agent");
+
+// Read AgentAccount PDA: owner(32) + agent_id(32) + review_count(4) + total_rating(4) + bump(1)
+async function fetchOnChainReputation(
+  connection: import("@solana/web3.js").Connection,
+  agentSlug: string
+): Promise<{ reviewCount: number; avgScore: number; pda: string } | null> {
+  try {
+    const encoded = new TextEncoder().encode(agentSlug);
+    const hashBuf = await crypto.subtle.digest("SHA-256", encoded.buffer as ArrayBuffer);
+    const agentIdBytes = new Uint8Array(hashBuf);
+    const [agentPDA] = PublicKey.findProgramAddressSync(
+      [AGENT_SEED, agentIdBytes],
+      STOVERA_ESCROW_PROGRAM_ID
+    );
+    const info = await connection.getAccountInfo(agentPDA);
+    if (!info) return { reviewCount: 0, avgScore: 0, pda: agentPDA.toBase58() };
+    const data = info.data;
+    const reviewCount = data.readUInt32LE(72);
+    const totalRating = data.readUInt32LE(76);
+    const avgScore = reviewCount > 0 ? totalRating / reviewCount : 0;
+    return { reviewCount, avgScore, pda: agentPDA.toBase58() };
+  } catch {
+    return null;
+  }
+}
 
 const STARS = (score: number) =>
   [1, 2, 3, 4, 5].map((i) => (
@@ -45,6 +73,44 @@ export default function AgentDetailPage() {
   const [txSig, setTxSig] = useState<string | null>(null);
   const [step, setStep] = useState<"idle" | "confirm" | "pending" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [onChainRep, setOnChainRep] = useState<{ reviewCount: number; avgScore: number; pda: string } | null>(null);
+  const [reviews, setReviews] = useState<{ id: string; user_address: string; rating: number; comment: string | null; created_at: string; tx_hash: string | null }[]>([]);
+  const [showReview, setShowReview] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [taskCompleted, setTaskCompleted] = useState(false);
+  const [completeError, setCompleteError] = useState("");
+
+  const handleCompleteTask = useCallback(async () => {
+    if (!taskId) return;
+    setCompleting(true);
+    setCompleteError("");
+    try {
+      const res = await fetch("/api/operator/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-operator-secret": "stovera2026" },
+        body: JSON.stringify({ taskIdHex: taskId, actualCostLamports: 0 }),
+      });
+      if (res.ok) {
+        setTaskCompleted(true);
+      } else {
+        const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        setCompleteError(body.error || `HTTP ${res.status}`);
+      }
+    } catch (err) {
+      setCompleteError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setCompleting(false);
+    }
+  }, [taskId]);
+
+  useEffect(() => {
+    if (!agent) return;
+    fetchOnChainReputation(connection, agent.id).then(setOnChainRep);
+    fetch(`/api/reviews?agentId=${encodeURIComponent(agent.id)}`)
+      .then((r) => r.json())
+      .then((d) => { if (d.reviews) setReviews(d.reviews); })
+      .catch(() => {});
+  }, [connection, agent]);
 
   const depositLamports = selectedTask && agent
     ? parseSol((parseFloat(selectedTask.estimateHigh) * agent.depositMultiplier).toFixed(9))
@@ -63,15 +129,46 @@ export default function AgentDetailPage() {
       const tid = await generateTaskId(agent.id, publicKey.toBase58());
       setTaskId(tid);
 
-      // Transfer SOL to operator as deposit (placeholder until Anchor IDL is deployed)
-      const tx = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: DEFAULT_OPERATOR,
-          lamports: Number(depositLamports),
-        })
+      // Convert hex task ID to 32-byte array
+      const taskIdBytes = new Uint8Array(32);
+      for (let i = 0; i < 32; i++) {
+        taskIdBytes[i] = parseInt(tid.slice(i * 2, i * 2 + 2), 16);
+      }
+
+      // Derive PDAs
+      const [taskPDA] = PublicKey.findProgramAddressSync(
+        [TASK_SEED, taskIdBytes],
+        STOVERA_ESCROW_PROGRAM_ID
+      );
+      const [statePDA] = PublicKey.findProgramAddressSync(
+        [STATE_SEED],
+        STOVERA_ESCROW_PROGRAM_ID
       );
 
+      // Build deposit_for_task instruction manually
+      // discriminator: [127, 150, 47, 196, 130, 128, 57, 42]
+      const disc = Buffer.from([127, 150, 47, 196, 130, 128, 57, 42]);
+      const data = Buffer.alloc(8 + 32 + 32 + 8);
+      disc.copy(data, 0);
+      Buffer.from(taskIdBytes).copy(data, 8);
+      DEFAULT_OPERATOR.toBuffer().copy(data, 40);
+      // u64 LE for deposit_lamports
+      const lamportsBN = depositLamports;
+      data.writeUInt32LE(Number(lamportsBN & 0xFFFFFFFFn), 72);
+      data.writeUInt32LE(Number((lamportsBN >> 32n) & 0xFFFFFFFFn), 76);
+
+      const ix = new TransactionInstruction({
+        programId: STOVERA_ESCROW_PROGRAM_ID,
+        keys: [
+          { pubkey: taskPDA, isSigner: false, isWritable: true },
+          { pubkey: statePDA, isSigner: false, isWritable: false },
+          { pubkey: publicKey, isSigner: true, isWritable: true },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        ],
+        data,
+      });
+
+      const tx = new Transaction().add(ix);
       const sig = await sendTransaction(tx, connection);
       setTxSig(sig);
 
@@ -90,7 +187,7 @@ export default function AgentDetailPage() {
           agentId: agent.id,
           userAddress: publicKey.toBase58(),
           operatorAddress: DEFAULT_OPERATOR.toBase58(),
-          depositEth: formatSol(depositLamports),
+          depositSol: formatSol(depositLamports),
           txHashDeposit: sig,
         }),
       }).catch((e) => console.error("Failed to save task to DB:", e));
@@ -139,13 +236,36 @@ export default function AgentDetailPage() {
               {agent.tagline}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ display: "flex" }}>{STARS(agent.score)}</span>
-                <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 22, color: "#C8A84B" }}>{agent.score}</span>
-                <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B" }}>({agent.reviews} reviews)</span>
-              </div>
+              {reviews.length > 0 ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ display: "flex" }}>{STARS(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length)}</span>
+                  <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 22, color: "#C8A84B" }}>{(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}</span>
+                  <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B" }}>({reviews.length} reviews · on-chain)</span>
+                </div>
+              ) : (
+                <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.15em", color: "#4ade80", border: "1px solid rgba(74,222,128,0.4)", padding: "3px 8px", background: "rgba(74,222,128,0.06)" }}>
+                  NEW · Be the first to review
+                </span>
+              )}
               <div style={{ width: 1, height: 20, background: "rgba(200,168,75,0.2)" }} />
               <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#C8A84B" }}>{agent.priceLabel}</span>
+              {(agent.website || agent.github) && (
+                <>
+                  <div style={{ width: 1, height: 20, background: "rgba(200,168,75,0.2)" }} />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {agent.website && (
+                      <a href={agent.website} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.1em", color: "#C8A84B", border: "1px solid rgba(200,168,75,0.35)", padding: "3px 10px", textDecoration: "none", background: "rgba(200,168,75,0.06)" }}>
+                        WEBSITE ↗
+                      </a>
+                    )}
+                    {agent.github && (
+                      <a href={agent.github} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.1em", color: "#6B7B6B", border: "1px solid rgba(107,123,107,0.35)", padding: "3px 10px", textDecoration: "none" }}>
+                        GITHUB ↗
+                      </a>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -155,7 +275,7 @@ export default function AgentDetailPage() {
             <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 28, color: "#C8A84B", lineHeight: 1, marginBottom: 4 }}>{agent.priceLabel}</p>
             <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B", lineHeight: 1.6, marginBottom: 16 }}>
               Billed by actual compute time.<br />
-              You deposit {agent.depositMultiplier}× estimate upfront.<br />
+              You deposit the max cost upfront.<br />
               Unused portion refunded automatically.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.2)" }}>
@@ -206,6 +326,57 @@ export default function AgentDetailPage() {
             </div>
           </div>
 
+          {/* Reviews */}
+          <div style={{ background: "#fff", border: "2px solid #1A2E1A" }}>
+            <SectionHeader label={`Reviews${reviews.length > 0 ? ` (${reviews.length})` : ""}`} />
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {reviews.length === 0 ? (
+                <div style={{ padding: "24px", textAlign: "center" }}>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B", letterSpacing: "0.1em" }}>
+                    {onChainRep && onChainRep.reviewCount > 0 ? "ON-CHAIN REVIEWS NOT YET INDEXED" : "NO REVIEWS YET"}
+                  </p>
+                  {onChainRep && onChainRep.reviewCount > 0 && (
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "#6B7B6B", marginTop: 6, lineHeight: 1.6 }}>
+                      {onChainRep.reviewCount} review{onChainRep.reviewCount > 1 ? "s" : ""} recorded on Solana · avg {onChainRep.avgScore.toFixed(1)} / 5.0
+                    </p>
+                  )}
+                </div>
+              ) : (
+                reviews.map((r, i) => (
+                  <div key={r.id} style={{ padding: "16px 24px", borderBottom: i < reviews.length - 1 ? "1px solid rgba(26,46,26,0.08)" : "none" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <div style={{ display: "flex", gap: 2 }}>
+                        {[1,2,3,4,5].map(s => (
+                          <span key={s} style={{ color: s <= r.rating ? "#C8A84B" : "rgba(200,168,75,0.2)", fontSize: 13 }}>★</span>
+                        ))}
+                      </div>
+                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.08em" }}>
+                        {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </span>
+                    </div>
+                    {r.comment && (
+                      <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13, color: "#1A2E1A", lineHeight: 1.65, marginBottom: 6, opacity: 0.85 }}>{r.comment}</p>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.06em" }}>
+                        {r.user_address.slice(0, 6)}...{r.user_address.slice(-4)}
+                      </span>
+                      {r.tx_hash && (
+                        <a
+                          href={`https://solscan.io/tx/${r.tx_hash}?cluster=devnet`}
+                          target="_blank" rel="noopener noreferrer"
+                          style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#4ade80", letterSpacing: "0.06em", textDecoration: "none" }}
+                        >
+                          ◎ on-chain ↗
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
           {/* 8004-SOL Identity Card */}
           <div style={{ background: "#0F1F0F", border: "1px solid rgba(74,222,128,0.3)" }}>
             <div style={{ padding: "12px 20px", borderBottom: "1px solid rgba(74,222,128,0.15)", display: "flex", alignItems: "center", gap: 8 }}>
@@ -228,15 +399,43 @@ export default function AgentDetailPage() {
                 </div>
                 <div>
                   <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Reputation</p>
-                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#C8A84B" }}>{agent.score} / 5.0</p>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: reviews.length > 0 ? "#C8A84B" : "#6B7B6B" }}>
+                    {reviews.length > 0 ? `${(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)} / 5.0` : "unrated"}
+                  </p>
                 </div>
                 <div>
                   <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Feedback</p>
-                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }}>{agent.reviews} reviews</p>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }}>
+                    {reviews.length === 0 ? "no reviews yet" : `${reviews.length} on-chain`}
+                  </p>
                 </div>
                 <div style={{ gridColumn: "span 2" }}>
                   <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Operator</p>
                   <EnsName address={DEFAULT_OPERATOR.toBase58()} showAvatar style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#F5F0E8" }} />
+                </div>
+                {onChainRep?.pda && (
+                  <div style={{ gridColumn: "span 2" }}>
+                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Identity Account (PDA)</p>
+                    <a
+                      href={`https://solscan.io/account/${onChainRep.pda}?cluster=devnet`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#4ade80", wordBreak: "break-all", lineHeight: 1.5, textDecoration: "none" }}
+                    >
+                      {onChainRep.pda} ↗
+                    </a>
+                  </div>
+                )}
+                <div style={{ gridColumn: "span 2" }}>
+                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.12em", color: "#6B7B6B", marginBottom: 3, textTransform: "uppercase" }}>Escrow Program</p>
+                  <a
+                    href={`https://solscan.io/account/${STOVERA_ESCROW_PROGRAM_ID.toBase58()}?cluster=devnet`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#4ade80", wordBreak: "break-all", lineHeight: 1.5, textDecoration: "none" }}
+                  >
+                    {STOVERA_ESCROW_PROGRAM_ID.toBase58()} ↗
+                  </a>
                 </div>
               </div>
               <div style={{ padding: "8px 10px", background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)" }}>
@@ -299,7 +498,7 @@ export default function AgentDetailPage() {
                 <div style={{ height: 1, background: "rgba(200,168,75,0.2)", margin: "4px 0" }} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#6B7B6B", letterSpacing: "0.1em" }}>
-                    DEPOSIT ({agent.depositMultiplier}× max)
+                    DEPOSIT (= MAX COST)
                   </span>
                   <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 20, color: "#C8A84B" }}>
                     {depositLamports ? formatSol(depositLamports) : "—"} SOL
@@ -361,13 +560,34 @@ export default function AgentDetailPage() {
                     </p>
                     {txSig && (
                       <a
-                        href={`https://solscan.io/tx/${txSig}`}
+                        href={`https://solscan.io/tx/${txSig}?cluster=devnet`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C8A84B", letterSpacing: "0.1em" }}
                       >
                         VIEW ON SOLSCAN →
                       </a>
+                    )}
+                    {!taskCompleted ? (
+                      <>
+                        <button
+                          onClick={handleCompleteTask}
+                          disabled={completing}
+                          style={{ display: "block", marginTop: 12, width: "100%", fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 12, letterSpacing: "0.08em", color: "#F5F0E8", background: completing ? "#6B7B6B" : "#1A2E1A", border: "1px solid rgba(74,222,128,0.3)", padding: "10px 0", cursor: completing ? "not-allowed" : "pointer" }}
+                        >
+                          {completing ? "COMPLETING..." : "⚡ SIMULATE TASK COMPLETE"}
+                        </button>
+                        {completeError && (
+                          <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#ef4444", lineHeight: 1.6, marginTop: 6, wordBreak: "break-all" }}>{completeError}</p>
+                        )}
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setShowReview(true)}
+                        style={{ display: "block", marginTop: 12, width: "100%", fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 12, letterSpacing: "0.08em", color: "#0F1F0F", background: "#C8A84B", border: "none", padding: "10px 0", cursor: "pointer" }}
+                      >
+                        ★ LEAVE A REVIEW
+                      </button>
                     )}
                   </div>
                 )}
@@ -396,6 +616,23 @@ export default function AgentDetailPage() {
           </button>
         </div>
       </div>
+
+      {showReview && agent && taskId && (
+        <ReviewModal
+          agentId={agent.id}
+          agentName={agent.name}
+          taskIdHex={taskId}
+          onClose={() => setShowReview(false)}
+          onSuccess={() => {
+            setShowReview(false);
+            fetchOnChainReputation(connection, agent.id).then(setOnChainRep);
+            fetch(`/api/reviews?agentId=${encodeURIComponent(agent.id)}`)
+              .then((r) => r.json())
+              .then((d) => { if (d.reviews) setReviews(d.reviews); })
+              .catch(() => {});
+          }}
+        />
+      )}
     </div>
   );
 }

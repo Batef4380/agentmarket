@@ -87,20 +87,6 @@ export default function Navbar() {
             </svg>
           </a>
 
-          {/* Dark mode toggle (half-circle — decorative for now) */}
-          <button
-            className="text-forest hover:text-gold transition-colors"
-            aria-label="Toggle dark mode"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 3a9 9 0 1 0 0 18V3z"
-                fill="currentColor"
-              />
-              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
-          </button>
-
           <span className="hidden lg:block font-mono text-xs text-forest border border-forest/30 px-3 py-1.5 hover:border-gold hover:text-gold transition-colors cursor-pointer">
             Trust is the Protocol →
           </span>

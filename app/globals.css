@@ -79,6 +79,11 @@ body {
   to   { transform: rotate(360deg); }
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
 @keyframes pulse-border {
   0%, 100% { box-shadow: 0 0 32px rgba(200, 168, 75, 0.35); border-color: #C8A84B; }
   50%       { box-shadow: 0 0 48px rgba(200, 168, 75, 0.6);  border-color: rgba(200, 168, 75, 0.6); }

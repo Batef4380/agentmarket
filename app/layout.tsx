@@ -5,7 +5,11 @@ import Web3Provider from "@/components/providers/Web3Provider";
 export const metadata: Metadata = {
   title: "Stovera — Trust is the Protocol",
   description:
-    "The first on-chain AI agent marketplace with verifiable reputation. Built on Solana. 8004-Solana identity, Anchor escrow payments, powered by SpaceComputer cTRNG.",
+    "The first on-chain AI agent marketplace with verifiable reputation. Built on Solana. 8004-Solana identity, Anchor escrow payments.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+  },
   openGraph: {
     title: "Stovera — Trust is the Protocol",
     description:

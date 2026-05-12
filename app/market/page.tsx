@@ -4,116 +4,20 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AppNav from "@/components/app/AppNav";
 
-// ── Mock agents (12 total) ─────────────────────────────────────────────────
+// ── Real Solana ecosystem agents ───────────────────────────────────────────
 const ALL_AGENTS = [
-  {
-    id: "web-scraper-pro",
-    name: "Web Scraper Pro",
-    category: "Analytics",
-    score: 4.9,
-    reviews: 234,
-    capabilities: ["Data Extraction", "Scraping", "Reporting"],
-    price: "0.001",
-  },
-  {
-    id: "contract-auditor",
-    name: "Contract Auditor",
-    category: "Security",
-    score: 4.8,
-    reviews: 312,
-    capabilities: ["Smart Contract Audit", "Bug Detection", "Gas Optimization"],
-    price: "0.005",
-  },
-  {
-    id: "market-analyst",
-    name: "Market Analyst",
-    category: "DeFi",
-    score: 4.7,
-    reviews: 189,
-    capabilities: ["Trend Analysis", "Portfolio", "Risk Assessment"],
-    price: "0.002",
-  },
-  {
-    id: "code-reviewer",
-    name: "Code Reviewer",
-    category: "Development",
-    score: 4.8,
-    reviews: 167,
-    capabilities: ["Code Review", "PR Review", "Refactoring"],
-    price: "0.003",
-  },
-  {
-    id: "nft-appraiser",
-    name: "NFT Appraiser",
-    category: "DeFi",
-    score: 4.6,
-    reviews: 98,
-    capabilities: ["NFT Valuation", "Rarity Analysis", "Market Data"],
-    price: "0.001",
-  },
-  {
-    id: "tweet-bot",
-    name: "Tweet Bot",
-    category: "Research",
-    score: 4.5,
-    reviews: 67,
-    capabilities: ["Content Generation", "Scheduling", "Crypto Native"],
-    price: "0.0005",
-  },
-  {
-    id: "defi-optimizer",
-    name: "DeFi Optimizer",
-    category: "DeFi",
-    score: 4.7,
-    reviews: 145,
-    capabilities: ["Yield Farming", "APY Analysis", "Liquidity"],
-    price: "0.004",
-  },
-  {
-    id: "doc-generator",
-    name: "Doc Generator",
-    category: "Development",
-    score: 4.6,
-    reviews: 78,
-    capabilities: ["Documentation", "Spec Writing", "Code Docs"],
-    price: "0.002",
-  },
-  {
-    id: "wallet-analyst",
-    name: "Wallet Analyst",
-    category: "Analytics",
-    score: 4.6,
-    reviews: 203,
-    capabilities: ["On-chain Analytics", "Wallet Tracking", "Token Flows"],
-    price: "0.001",
-  },
-  {
-    id: "news-summarizer",
-    name: "News Summarizer",
-    category: "Research",
-    score: 4.7,
-    reviews: 156,
-    capabilities: ["News Digest", "Summarization", "Web3 News"],
-    price: "0.0005",
-  },
-  {
-    id: "ens-resolver",
-    name: "ENS Resolver",
-    category: "Analytics",
-    score: 4.9,
-    reviews: 289,
-    capabilities: ["ENS Lookup", "Reverse Resolve", "Address Book"],
-    price: "0.0002",
-  },
-  {
-    id: "gas-tracker",
-    name: "Gas Tracker",
-    category: "DeFi",
-    score: 4.8,
-    reviews: 45,
-    capabilities: ["Gas Monitoring", "Alerts", "Tx Timing"],
-    price: "0.0003",
-  },
+  { id: "eliza-agent",      name: "ELIZA",              category: "Research",     score: 0, reviews: 0, capabilities: ["Multi-model", "Autonomous", "Plugin System"],      price: "0.005" },
+  { id: "drift-vaults",     name: "Drift Vault Bot",    category: "DeFi",         score: 0, reviews: 0, capabilities: ["Delta Neutral", "Auto-rebalance", "Yield Vault"],   price: "0.01"  },
+  { id: "birdeye-analytics",name: "Birdeye Analytics",  category: "Analytics",    score: 0, reviews: 0, capabilities: ["Token Metrics", "Wallet Tracking", "DEX Data"],     price: "0.003" },
+  { id: "helius-webhooks",  name: "Helius Webhooks",    category: "Development",  score: 0, reviews: 0, capabilities: ["Event Streaming", "Enhanced RPC", "NFT APIs"],      price: "0.004" },
+  { id: "jito-bundle-bot",  name: "Jito Bundle Bot",    category: "DeFi",         score: 0, reviews: 0, capabilities: ["MEV Capture", "Bundle Submit", "Tip Routing"],      price: "0.02"  },
+  { id: "jupiter-dca",      name: "Jupiter DCA",        category: "DeFi",         score: 0, reviews: 0, capabilities: ["DCA Orders", "Limit Orders", "Price Alerts"],       price: "0.002" },
+  { id: "ottersec-auditor", name: "OtterSec Auditor",   category: "Security",     score: 0, reviews: 0, capabilities: ["Anchor Audit", "Exploit Detection", "IDL Analysis"],price: "0.05"  },
+  { id: "tensor-sniper",    name: "Tensor Sniper",      category: "DeFi",         score: 0, reviews: 0, capabilities: ["NFT Sniping", "Rarity Filter", "Auto-bid"],         price: "0.008" },
+  { id: "pyth-oracle",      name: "Pyth Oracle Agent",  category: "Analytics",    score: 0, reviews: 0, capabilities: ["Price Feeds", "Confidence Bands", "Pull Model"],    price: "0.001" },
+  { id: "dialect-blinks",   name: "Dialect Blinks",     category: "Development",  score: 0, reviews: 0, capabilities: ["Blink Builder", "Action URLs", "Tx Automation"],    price: "0.003" },
+  { id: "meteora-lp-bot",   name: "Meteora LP Bot",     category: "DeFi",         score: 0, reviews: 0, capabilities: ["DLMM Management", "Fee Optimization", "Range Setting"], price: "0.006" },
+  { id: "hivemapper-agent", name: "Hivemapper Agent",   category: "DePIN",        score: 0, reviews: 0, capabilities: ["Map Coverage", "Rewards Optimizer", "Route Planning"], price: "0.004" },
 ];
 
 const CATEGORIES = ["All", "DeFi", "Research", "Analytics", "Development", "Security", "DePIN"];
@@ -122,15 +26,15 @@ type SortKey = "Top Rated" | "Most Reviewed" | "Newest";
 // ── Gradient per category ──────────────────────────────────────────────────
 const CATEGORY_GRADIENT: Record<string, string> = {
   DeFi: "linear-gradient(135deg, #C8A84B 0%, #1A2E1A 100%)",
-  Research: "linear-gradient(135deg, #4ade80 0%, #0F1F0F 100%)",
-  Analytics: "linear-gradient(135deg, #1A2E1A 0%, #4ade80 100%)",
-  Development: "linear-gradient(135deg, #C8A84B 0%, #0F1F0F 100%)",
+  Research: "linear-gradient(135deg, #9945FF 0%, #0F1F0F 100%)",
+  Analytics: "linear-gradient(135deg, #1A2E1A 0%, #14F195 100%)",
+  Development: "linear-gradient(135deg, #14F195 0%, #0F1F0F 100%)",
   Security: "linear-gradient(135deg, #7f1d1d 0%, #0F1F0F 100%)",
-  DePIN: "linear-gradient(135deg, #4ade80 0%, #1A2E1A 100%)",
+  DePIN: "linear-gradient(135deg, #9945FF 0%, #1A2E1A 100%)",
 };
 
 // ── Agent card ─────────────────────────────────────────────────────────────
-function AgentCard({ agent }: { agent: (typeof ALL_AGENTS)[0] }) {
+function AgentCard({ agent, rep }: { agent: (typeof ALL_AGENTS)[0]; rep?: { avg: number; count: number } }) {
   const [hovered, setHovered] = useState(false);
   const router = useRouter();
 
@@ -165,8 +69,9 @@ function AgentCard({ agent }: { agent: (typeof ALL_AGENTS)[0] }) {
             right: 12,
             fontFamily: "JetBrains Mono, monospace",
             fontSize: 10,
-            color: "#C8A84B",
+            color: "#fff",
             letterSpacing: "0.1em",
+            textShadow: "0 1px 4px rgba(0,0,0,0.6)",
           }}
         >
           #{agent.id}
@@ -205,32 +110,29 @@ function AgentCard({ agent }: { agent: (typeof ALL_AGENTS)[0] }) {
           {agent.name}
         </h3>
 
-        {/* Score */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
-          <span
-            style={{
-              fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: 28,
-              color: "#C8A84B",
-              lineHeight: 1,
-            }}
-          >
-            {agent.score} ★
-          </span>
-        </div>
-
-        {/* Review count */}
-        <p
-          style={{
-            fontFamily: "JetBrains Mono, monospace",
-            fontSize: 10,
-            color: "#6B7B6B",
-            letterSpacing: "0.05em",
-            marginBottom: 14,
-          }}
-        >
-          ({agent.reviews} reviews)
-        </p>
+        {/* Score / new badge */}
+        {rep && rep.count > 0 ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
+            <div style={{ display: "flex", gap: 1 }}>
+              {[1,2,3,4,5].map(s => (
+                <span key={s} style={{ color: s <= Math.round(rep.avg) ? "#C8A84B" : "rgba(200,168,75,0.2)", fontSize: 14 }}>★</span>
+              ))}
+            </div>
+            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 18, color: "#C8A84B", lineHeight: 1 }}>{rep.avg.toFixed(1)}</span>
+            <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B" }}>({rep.count})</span>
+          </div>
+        ) : (
+          <div style={{ marginBottom: 14 }}>
+            <span style={{
+              fontFamily: "JetBrains Mono, monospace", fontSize: 9,
+              letterSpacing: "0.12em", color: "#166534",
+              border: "1px solid rgba(22,101,52,0.35)", padding: "3px 8px",
+              background: "rgba(22,101,52,0.07)",
+            }}>
+              NEW · Be the first to review
+            </span>
+          </div>
+        )}
 
         {/* Capabilities */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
@@ -240,10 +142,11 @@ function AgentCard({ agent }: { agent: (typeof ALL_AGENTS)[0] }) {
               style={{
                 fontFamily: "JetBrains Mono, monospace",
                 fontSize: 9,
-                letterSpacing: "0.05em",
-                color: "#6B7B6B",
-                border: "1px solid rgba(107,123,107,0.3)",
-                padding: "2px 6px",
+                letterSpacing: "0.04em",
+                color: "#3a4a3a",
+                border: "1px solid rgba(26,46,26,0.2)",
+                padding: "2px 7px",
+                background: "rgba(26,46,26,0.04)",
               }}
             >
               {cap}
@@ -256,7 +159,7 @@ function AgentCard({ agent }: { agent: (typeof ALL_AGENTS)[0] }) {
           <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "#1A2E1A", letterSpacing: "0.05em" }}>
             {agent.price} SOL / task
           </p>
-          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.1em", color: "#4ade80", padding: "2px 6px", border: "1px solid rgba(74,222,128,0.3)", background: "rgba(74,222,128,0.05)" }}>
+          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, letterSpacing: "0.1em", color: "#166534", padding: "2px 6px", border: "1px solid rgba(22,101,52,0.4)", background: "rgba(22,101,52,0.06)" }}>
             ◎ 8004-SOL
           </span>
         </div>
@@ -292,23 +195,16 @@ export default function MarketPage() {
   const [sort, setSort] = useState<SortKey>("Top Rated");
   const [searchQuery, setSearchQuery] = useState("");
   const [verifiedAgents, setVerifiedAgents] = useState<typeof ALL_AGENTS>([]);
-  const [cosmicPicks, setCosmicPicks] = useState<typeof ALL_AGENTS | null>(null);
-  const [cosmicMeta, setCosmicMeta] = useState<{
-    seed: string;
-    seq: number | null;
-    live: boolean;
-    source: string;
-    signature: string | null;
-    via: string;
-  } | null>(null);
-  const [solanaPicks, setSolanaPicks] = useState<typeof ALL_AGENTS | null>(null);
+  const [reviewSummary, setReviewSummary] = useState<Record<string, { avg: number; count: number }>>({});
+  const [solanaPicks, setSolanaPicks] = useState<typeof ALL_AGENTS>(ALL_AGENTS.slice(0, 3));
   const [solanaMeta, setSolanaMeta] = useState<{
     blockhash: string | null;
     slot: number | null;
     rpc: string;
     solscanUrl: string | null;
     timestamp: string;
-  } | null>(null);
+  }>({ blockhash: null, slot: null, rpc: "mainnet-beta", solscanUrl: null, timestamp: new Date().toISOString() });
+  const [solanaLoading, setSolanaLoading] = useState(true);
 
   useEffect(() => {
     const pool = JSON.parse(localStorage.getItem("stovera_pool") || "[]");
@@ -322,63 +218,25 @@ export default function MarketPage() {
   }, []);
 
   useEffect(() => {
-    async function fetchCosmicRandom() {
-      let values: string[] = [];
-      let source = "date_seeded";
-      let signature: string | null = null;
-      let seq: number | null = null;
-      let live = false;
-      let via = "fallback";
-
-      try {
-        const res = await fetch("/api/random", { signal: AbortSignal.timeout(10000) });
-        if (res.ok) {
-          const json = await res.json();
-          values = json.values ?? [];
-          source = json.source ?? "unknown";
-          signature = json.signature ?? null;
-          seq = json.sequence ?? null;
-          live = json.live ?? false;
-          via = json.via ?? "unknown";
-        }
-      } catch {
-        // fallback handled below
-      }
-
-      const pool = ALL_AGENTS;
-      const seen = new Set<string>();
-      const picks: typeof ALL_AGENTS = [];
-
-      for (const hex of values) {
-        const idx = parseInt(hex.slice(0, 8), 16) % pool.length;
-        const agent = pool[idx];
-        if (!seen.has(agent.id)) { seen.add(agent.id); picks.push(agent); }
-        if (picks.length === 3) break;
-      }
-      for (const a of pool) {
-        if (picks.length >= 3) break;
-        if (!seen.has(a.id)) { seen.add(a.id); picks.push(a); }
-      }
-
-      setCosmicPicks(picks.slice(0, 3));
-      setCosmicMeta({
-        seed: values[0]?.slice(0, 16) ?? "???",
-        seq,
-        live,
-        source,
-        signature,
-        via,
-      });
-    }
-    fetchCosmicRandom();
+    fetch("/api/reviews?summary=1")
+      .then((r) => r.json())
+      .then((d) => { if (d.summary) setReviewSummary(d.summary); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     async function fetchSolanaEntropy() {
+      setSolanaLoading(true);
       try {
-        const res = await fetch("/api/random/solana", { signal: AbortSignal.timeout(8000) });
-        if (!res.ok) return;
-        const json = await res.json();
+        // Manual timeout via Promise.race — AbortSignal.timeout unreliable in some envs
+        const fetchPromise = fetch("/api/random/solana").then((r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        });
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 12000)
+        );
+        const json = await Promise.race([fetchPromise, timeoutPromise]);
 
         const pool = ALL_AGENTS;
         const seen = new Set<string>();
@@ -404,10 +262,16 @@ export default function MarketPage() {
           timestamp: json.timestamp,
         });
       } catch {
-        // silently ignore
+        // keep existing picks, just clear loading
+      } finally {
+        setSolanaLoading(false);
       }
     }
+
     fetchSolanaEntropy();
+    // Refresh every 30 seconds — new block, new picks
+    const interval = setInterval(fetchSolanaEntropy, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const allAgents = [...ALL_AGENTS, ...verifiedAgents];
@@ -418,8 +282,8 @@ export default function MarketPage() {
       searchQuery === "" || a.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCat && matchesSearch;
   }).sort((a, b) => {
-    if (sort === "Top Rated") return b.score - a.score;
-    if (sort === "Most Reviewed") return b.reviews - a.reviews;
+    if (sort === "Top Rated") return (reviewSummary[b.id]?.avg ?? 0) - (reviewSummary[a.id]?.avg ?? 0);
+    if (sort === "Most Reviewed") return (reviewSummary[b.id]?.count ?? 0) - (reviewSummary[a.id]?.count ?? 0);
     return 0;
   });
 
@@ -450,7 +314,7 @@ export default function MarketPage() {
           AGENT MARKET
         </h1>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <input
             type="text"
             placeholder="Search agents..."
@@ -462,31 +326,33 @@ export default function MarketPage() {
               letterSpacing: "0.05em",
               color: "#1A2E1A",
               background: "#fff",
-              border: "2px solid #1A2E1A",
+              border: "2px solid rgba(26,46,26,0.3)",
               borderRadius: 0,
               padding: "8px 14px",
               outline: "none",
               width: 220,
             }}
           />
+          <div style={{ width: 1, height: 32, background: "rgba(26,46,26,0.15)" }} />
           <button
             onClick={() => router.push("/register")}
             style={{
               fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: 13,
-              letterSpacing: "0.08em",
-              color: "#F5F0E8",
-              background: "#1A2E1A",
+              fontSize: 14,
+              letterSpacing: "0.1em",
+              color: "#0F1F0F",
+              background: "#C8A84B",
               border: "none",
-              padding: "10px 20px",
+              padding: "11px 24px",
               cursor: "pointer",
-              transition: "background 0.2s",
+              transition: "background 0.2s, transform 0.1s",
               whiteSpace: "nowrap",
+              boxShadow: "2px 2px 0px #1A2E1A",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#C8A84B")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#1A2E1A")}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#d4b455"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "#C8A84B"; e.currentTarget.style.transform = "translateY(0)"; }}
           >
-            REGISTER AGENT
+            + REGISTER AGENT
           </button>
         </div>
       </div>
@@ -569,146 +435,8 @@ export default function MarketPage() {
         </div>
       </div>
 
-      {/* ── Cosmic Picks ───────────────────────────────────────────────── */}
-      {cosmicPicks && (
-        <div style={{
-          background: "#0F1F0F",
-          backgroundImage: "linear-gradient(rgba(200,168,75,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(200,168,75,0.03) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-          borderBottom: "1px solid rgba(200,168,75,0.2)",
-          padding: "28px 0",
-        }}>
-          <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 24px" }}>
-            {/* Header row */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <span style={{ color: "#C8A84B", fontSize: 18, animation: "spin 8s linear infinite" }}>✦</span>
-                <div>
-                  <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 18, color: "#F5F0E8", letterSpacing: "0.1em" }}>
-                    COSMIC PICKS
-                  </p>
-                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B", letterSpacing: "0.15em", marginTop: 2 }}>
-                    TODAY&apos;S RANDOM AGENT SPOTLIGHT
-                  </p>
-                </div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-                {/* Status pill */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    background: cosmicMeta?.via === "orbitport_api" ? "rgba(74,222,128,0.1)" : "rgba(200,168,75,0.08)",
-                    border: cosmicMeta?.via === "orbitport_api" ? "1px solid rgba(74,222,128,0.4)" : "1px solid rgba(200,168,75,0.25)",
-                    padding: "5px 10px",
-                  }}>
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: cosmicMeta?.live ? "#4ade80" : "#6B7B6B" }} />
-                    <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: cosmicMeta?.live ? "#4ade80" : "#6B7B6B", letterSpacing: "0.1em" }}>
-                      {cosmicMeta?.via === "orbitport_api" ? "SATELLITE · LIVE" : cosmicMeta?.via === "ipfs_beacon" ? "IPFS BEACON · LIVE" : "DATE-SEEDED"}
-                    </span>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.1em" }}>POWERED BY</p>
-                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C8A84B", letterSpacing: "0.05em" }}>
-                      SpaceComputer cTRNG{cosmicMeta?.seq ? ` · seq #${cosmicMeta.seq}` : ""}
-                    </p>
-                  </div>
-                </div>
-                {/* Seed + signature */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
-                  <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.05em" }}>
-                    entropy: <span style={{ color: "rgba(200,168,75,0.6)" }}>{cosmicMeta?.seed}...</span>
-                  </p>
-                  {cosmicMeta?.source && cosmicMeta.source !== "date_seeded" && (
-                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.05em" }}>
-                      source: <span style={{ color: "#4ade80" }}>{cosmicMeta.source}</span>
-                    </p>
-                  )}
-                  {cosmicMeta?.signature && (
-                    <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#6B7B6B", letterSpacing: "0.05em" }}>
-                      sig: <span style={{ color: "rgba(74,222,128,0.6)" }}>{cosmicMeta.signature.slice(0, 20)}...</span>
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 3 agent cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-              {cosmicPicks.map((agent, i) => (
-                <div
-                  key={agent.id}
-                  onClick={() => router.push(`/agents/${agent.id}`)}
-                  style={{
-                    background: "#1A2E1A",
-                    border: "1px solid rgba(200,168,75,0.35)",
-                    display: "flex",
-                    flexDirection: "column",
-                    overflow: "hidden",
-                    cursor: "pointer",
-                    transition: "border-color 0.2s, transform 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.borderColor = "#C8A84B";
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(200,168,75,0.35)";
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-                  }}
-                >
-                  <div style={{ height: 6, background: i === 0 ? "#C8A84B" : i === 1 ? "#4ade80" : "rgba(200,168,75,0.5)" }} />
-                  <div style={{ padding: "16px 18px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                      <span style={{
-                        fontFamily: "JetBrains Mono, monospace", fontSize: 8,
-                        letterSpacing: "0.2em", textTransform: "uppercase",
-                        background: "rgba(200,168,75,0.15)", color: "#C8A84B",
-                        padding: "2px 7px",
-                      }}>
-                        {agent.category}
-                      </span>
-                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "rgba(200,168,75,0.4)", letterSpacing: "0.1em" }}>
-                        #{i + 1} PICK
-                      </span>
-                    </div>
-                    <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 17, color: "#F5F0E8", marginBottom: 8, lineHeight: 1.2 }}>
-                      {agent.name}
-                    </p>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10 }}>
-                      <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 22, color: "#C8A84B", lineHeight: 1 }}>
-                        {agent.score} ★
-                      </span>
-                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B" }}>
-                        ({agent.reviews} reviews)
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
-                      {agent.capabilities.slice(0, 2).map((c) => (
-                        <span key={c} style={{
-                          fontFamily: "JetBrains Mono, monospace", fontSize: 8,
-                          color: "#6B7B6B", border: "1px solid rgba(107,123,107,0.3)", padding: "2px 6px",
-                        }}>{c}</span>
-                      ))}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid rgba(200,168,75,0.15)", paddingTop: 10 }}>
-                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B" }}>
-                        {agent.price} SOL / task
-                      </span>
-                      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C8A84B", letterSpacing: "0.1em" }}>
-                        VIEW →
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── Solana Entropy Picks ───────────────────────────────────────── */}
-      {solanaPicks && (
-        <div style={{
+      <div style={{
           background: "#0a0a1a",
           backgroundImage: "linear-gradient(rgba(153,69,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.04) 1px, transparent 1px)",
           backgroundSize: "40px 40px",
@@ -734,13 +462,17 @@ export default function MarketPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                   <div style={{
                     display: "flex", alignItems: "center", gap: 6,
-                    background: solanaMeta?.slot ? "rgba(153,69,255,0.12)" : "rgba(107,123,107,0.1)",
-                    border: solanaMeta?.slot ? "1px solid rgba(153,69,255,0.4)" : "1px solid rgba(107,123,107,0.3)",
+                    background: solanaLoading ? "rgba(107,123,107,0.08)" : solanaMeta?.slot ? "rgba(153,69,255,0.12)" : "rgba(107,123,107,0.1)",
+                    border: solanaLoading ? "1px solid rgba(107,123,107,0.2)" : solanaMeta?.slot ? "1px solid rgba(153,69,255,0.4)" : "1px solid rgba(107,123,107,0.3)",
                     padding: "5px 10px",
                   }}>
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: solanaMeta?.slot ? "#9945FF" : "#6B7B6B" }} />
-                    <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: solanaMeta?.slot ? "#9945FF" : "#6B7B6B", letterSpacing: "0.1em" }}>
-                      {solanaMeta?.slot ? `SLOT #${solanaMeta.slot.toLocaleString()} · LIVE` : "FALLBACK"}
+                    <div style={{
+                      width: 5, height: 5, borderRadius: "50%",
+                      background: solanaLoading ? "#6B7B6B" : solanaMeta?.slot ? "#9945FF" : "#6B7B6B",
+                      animation: solanaLoading ? "pulse 1s infinite" : "none",
+                    }} />
+                    <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: solanaLoading ? "#6B7B6B" : solanaMeta?.slot ? "#9945FF" : "#6B7B6B", letterSpacing: "0.1em" }}>
+                      {solanaLoading ? "FETCHING BLOCK..." : solanaMeta?.slot ? `SLOT #${solanaMeta.slot.toLocaleString()} · LIVE` : "RPC UNAVAILABLE"}
                     </span>
                   </div>
                   <div style={{ textAlign: "right" }}>
@@ -842,7 +574,6 @@ export default function MarketPage() {
             </div>
           </div>
         </div>
-      )}
 
       {/* ── Agent grid ─────────────────────────────────────────────────── */}
       <div
@@ -874,7 +605,7 @@ export default function MarketPage() {
             }}
           >
             {filtered.map((agent) => (
-              <AgentCard key={agent.id} agent={agent} />
+              <AgentCard key={agent.id} agent={agent} rep={reviewSummary[agent.id]} />
             ))}
           </div>
         )}

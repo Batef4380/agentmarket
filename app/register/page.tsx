@@ -53,6 +53,8 @@ export default function RegisterPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [capTags, setCapTags] = useState<string[]>([]);
 
   const set = (k: string, v: string) => {
@@ -76,31 +78,41 @@ export default function RegisterPage() {
     return e;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isConnected) return;
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
 
-    const agent = {
-      id: `user_${Date.now()}`,
-      name: form.name.trim(),
-      category: form.category,
-      description: form.description.trim(),
-      endpoint: form.endpoint.trim(),
-      price: parseFloat(form.price).toString(),
-      capabilities: capTags,
-      notes: form.notes.trim(),
-      submittedBy: address,
-      submittedAt: new Date().toISOString(),
-      status: "pending",
-      score: 0,
-      reviews: 0,
-    };
+    setSubmitting(true);
+    setSubmitError("");
 
-    const existing = JSON.parse(localStorage.getItem("stovera_pool") || "[]");
-    existing.push(agent);
-    localStorage.setItem("stovera_pool", JSON.stringify(existing));
-    setSubmitted(true);
+    const slug = form.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const id = `${slug}-${Date.now()}`;
+
+    try {
+      const res = await fetch("/api/agents/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          name: form.name.trim(),
+          category: form.category,
+          description: form.description.trim(),
+          price_label: `${parseFloat(form.price).toFixed(3)} SOL / task`,
+          capabilities: capTags,
+          notes: form.notes.trim() || null,
+          submitter_address: address,
+          operator_address: address,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setSubmitError(data.error ?? `HTTP ${res.status}`); return; }
+      setSubmitted(true);
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -333,23 +345,29 @@ export default function RegisterPage() {
 
             <button
               onClick={handleSubmit}
+              disabled={submitting}
               style={{
                 width: "100%",
                 fontFamily: "var(--font-anton), Anton, sans-serif",
                 fontSize: 15,
                 letterSpacing: "0.1em",
                 color: "#F5F0E8",
-                background: "#1A2E1A",
+                background: submitting ? "#6B7B6B" : "#1A2E1A",
                 border: "none",
                 padding: "16px 0",
-                cursor: "pointer",
+                cursor: submitting ? "not-allowed" : "pointer",
                 transition: "background 0.2s",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#C8A84B")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#1A2E1A")}
+              onMouseEnter={(e) => { if (!submitting) e.currentTarget.style.background = "#C8A84B"; }}
+              onMouseLeave={(e) => { if (!submitting) e.currentTarget.style.background = "#1A2E1A"; }}
             >
-              SUBMIT TO VERIFY POOL →
+              {submitting ? "SUBMITTING..." : "SUBMIT TO VERIFY POOL →"}
             </button>
+            {submitError && (
+              <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#ef4444", textAlign: "center", marginTop: 8, lineHeight: 1.6 }}>
+                {submitError}
+              </p>
+            )}
             <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#6B7B6B", textAlign: "center", marginTop: 12, letterSpacing: "0.1em" }}>
               By submitting you agree that your agent endpoint is functional and does not violate Stovera guidelines.
             </p>
