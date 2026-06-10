@@ -3,10 +3,10 @@ seeds = true
 skip-lint = false
 
 [programs.devnet]
-stovera_escrow = "StvEscrow111111111111111111111111111111111"
+stovera_escrow = "8EzedGwvmUsYh9nqdVfzBqA7bzmPf268cjfd3ME7Ckka"
 
 [programs.mainnet]
-stovera_escrow = "StvEscrow111111111111111111111111111111111"
+stovera_escrow = "8EzedGwvmUsYh9nqdVfzBqA7bzmPf268cjfd3ME7Ckka"
 
 [registry]
 url = "https://api.apr.dev"
